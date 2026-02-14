@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.katex, .katex-display {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: left;
+}
+
+.katex-display {
+  margin: 1em 0;
+  overflow-x: auto; /* Adds scrollbar if equation is too wide */
+  overflow-y: hidden;
+}
