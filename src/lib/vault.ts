@@ -1,5 +1,25 @@
 import path from 'path';
 import fs from 'fs';
+import matter from 'gray-matter';
+
+export interface TreeItem {
+    name: string;
+    title: string;
+    path: string;
+    isDirectory: boolean;
+    children?: TreeItem[];
+}
+
+const FOLDER_DICTIONARY: Record<string, string> = {
+    'university': 'אוניברסיטה',
+    'physics': 'פיזיקה',
+    'math': 'מתמטיקה',
+    'semester-a': "סמסטר א'",
+    'bsc-cs': 'תואר ראשון במדעי המחשב',
+    'hw': 'שיעורי בית',
+    'tutorials': 'תרגול',
+    'dorms': 'מעונות'
+};
 
 const VAULT_DIRECTORY = path.join(process.cwd(), 'vault');
 
@@ -49,4 +69,75 @@ export function getNoteContent(slugArray: string[]) {
     }
 
     return fs.readFileSync(fullPath, 'utf8');
+}
+
+let dynamicFolderMap: Record<string, string> = {};
+
+export function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/notes'): TreeItem[] {
+    if (!fs.existsSync(dir)) return [];
+
+    // --- NEW: Load the auto-generated folder map ---
+    if (Object.keys(dynamicFolderMap).length === 0) {
+        try {
+            const mapPath = path.join(VAULT_DIRECTORY, 'folder-map.json');
+            if (fs.existsSync(mapPath)) {
+                dynamicFolderMap = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+            } else {
+                dynamicFolderMap = {};
+            }
+        } catch {
+            dynamicFolderMap = {};
+        }
+    }
+
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    const tree: TreeItem[] = [];
+
+    for (const entry of entries) {
+        if (entry.name.startsWith('.')) continue;
+        
+        // --- NEW: Hide the system mapping file from the TOC ---
+        if (entry.name === 'folder-map.json') continue; 
+
+        const fullPath = path.join(dir, entry.name);
+        const slug = entry.name.replace(/\.md$/, '');
+        const itemPath = `${currentPath}/${slug}`;
+
+        if (entry.isDirectory()) {
+            const children = getVaultTree(fullPath, itemPath);
+            
+            if (children.length > 0) {
+                tree.push({
+                    name: entry.name,
+                    // --- NEW: Check the dynamic map before falling back to the raw name ---
+                    title: FOLDER_DICTIONARY[entry.name] || dynamicFolderMap[entry.name] || entry.name.replace(/-/g, ' '),
+                    path: itemPath,
+                    isDirectory: true,
+                    children: children
+                });
+            }
+        } else if (entry.name.endsWith('.md')) {
+            const content = fs.readFileSync(fullPath, 'utf8');
+            const { data } = matter(content);
+            
+            tree.push({
+                name: slug,
+                title: data.title || slug,
+                path: itemPath,
+                isDirectory: false
+            });
+        }
+    }
+
+    // Sort the tree
+    return tree.sort((a, b) => {
+        if (a.isDirectory && !b.isDirectory) return -1;
+        if (!a.isDirectory && b.isDirectory) return 1;
+        
+        const numA = parseInt(a.name.match(/^\d+/)?.[0] || '0');
+        const numB = parseInt(b.name.match(/^\d+/)?.[0] || '0');
+        
+        if (numA !== numB) return numA - numB;
+        return a.title.localeCompare(b.title, 'he');
+    });
 }

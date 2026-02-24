@@ -19,6 +19,8 @@
 
 # production
 /build
+/vault
+/vault/*
 
 # misc
 .DS_Store

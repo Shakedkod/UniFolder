@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getAllNoteSlugs, getNoteContent } from '@/lib/vault'; // Adjust path if not using @
 import { renderMarkdownContent } from '@/lib/processor';
-import MarkdownRenderer from '@/components/MarkdownRenderer';
+import matter from 'gray-matter';
 import Sidebar from '@/components/Sidebar';
 
 export async function generateStaticParams() {
@@ -21,7 +21,8 @@ export default async function NotePage({ params }: { params: { slug: string[] } 
     }
 
     const { contentHtml, toc } = await renderMarkdownContent(markdownContent);
-    const title = decodeURIComponent(resolvedParams.slug[resolvedParams.slug.length - 1]);
+    const { data: frontmatter, content: pureMarkdown } = matter(markdownContent);
+    const title = frontmatter.title || decodeURIComponent(resolvedParams.slug[resolvedParams.slug.length - 1]);
 
     return (
         <main className={`flex flex-row w-full h-full lg:grid lg:grid-cols-[auto_1fr]`}>
