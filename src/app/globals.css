@@ -72,6 +72,25 @@ body {
   pointer-events: none;
 }
 
+/* --- Hide Scrollbars for Math and Diagrams --- */
+.academic-preview .katex-display,
+.academic-preview .graphviz-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  
+  /* Firefox */
+  scrollbar-width: none; 
+  
+  /* IE and Edge */
+  -ms-overflow-style: none; 
+}
+
+/* Chrome, Safari, and Opera */
+.academic-preview .katex-display::-webkit-scrollbar,
+.academic-preview .graphviz-container::-webkit-scrollbar {
+  display: none;
+}
+
 /* --- Academic Formula Sheet Styling --- */
 .academic-preview {
   color: #d1d5db;
@@ -246,4 +265,99 @@ body {
   padding-bottom: 6px;
   border-bottom: 2px solid red;
   text-align: center;
+}
+
+.math-cancel {
+  /* Diagonal line from bottom-left to top-right */
+  background: linear-gradient(
+    to top right, 
+    transparent calc(50% - 1px), 
+    currentColor calc(50%), 
+    transparent calc(50% + 1px)
+  );
+  padding: 0 0.15em; /* Gives the line slight breathing room */
+}
+
+.math-bcancel {
+  /* Diagonal line from top-left to bottom-right */
+  background: linear-gradient(
+    to bottom right, 
+    transparent calc(50% - 1px), 
+    currentColor calc(50%), 
+    transparent calc(50% + 1px)
+  );
+  padding: 0 0.15em;
+}
+
+.math-xcancel {
+  /* X-cross (Applies both gradients simultaneously) */
+  background: 
+    linear-gradient(to top right, transparent calc(50% - 1px), currentColor calc(50%), transparent calc(50% + 1px)),
+    linear-gradient(to bottom right, transparent calc(50% - 1px), currentColor calc(50%), transparent calc(50% + 1px));
+  padding: 0 0.15em;
+}
+
+/* --- Graphviz Diagram Styling --- */
+.academic-preview .graphviz-container {
+  display: flex;
+  justify-content: center;
+  margin: 2.5rem 0;
+  overflow-x: auto;
+}
+
+.academic-preview .graphviz-container svg {
+  max-width: 100%;
+  height: auto !important;
+  
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* --- Halmos --- */
+.academic-preview .halmos {
+  float: left;
+  color: white;
+  font-size: 1.2em;
+  line-height: 1;
+  margin-top: 0.1rem;
+  margin-left: 0.5rem;
+}
+
+.academic-preview p:has(.halmos) {
+  display: flow-root; 
+}
+
+/* --- Obsidian Images & Excalidraws --- */
+.academic-preview .obsidian-image {
+  display: block;
+  margin: 2rem auto; /* Centers the image perfectly */
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* Optional: Slight dark-mode inversion for Excalidraw SVGs 
+   (so black hand-drawn lines turn white) */
+.academic-preview img[src*=".excalidraw.svg"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* --- Global Smart Link Styling --- */
+/* Targets all links EXCEPT our hidden Obsidian block ID anchors */
+.academic-preview a:not(.obsidian-block-anchor) {
+  color: #fb923c; /* Tailwind orange-400 */
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s ease-in-out;
+}
+
+.academic-preview a:not(.obsidian-block-anchor):hover {
+  color: #fdba74; /* Tailwind orange-300 */
+}
+
+/* --- MathJax Backwards-Hebrew Hack Support --- */
+/* Forces KaTeX to blindly render characters left-to-right just like Obsidian's MathJax.
+   This perfectly restores Hebrew text that was intentionally typed backwards. */
+.academic-preview .katex {
+  direction: ltr !important;
+  unicode-bidi: bidi-override;
 }

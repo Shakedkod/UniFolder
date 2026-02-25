@@ -21,6 +21,8 @@
 /build
 /vault
 /vault/*
+/public/vault-images
+/public/vault-images/*
 
 # misc
 .DS_Store

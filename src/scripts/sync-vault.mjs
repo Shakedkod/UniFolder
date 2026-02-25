@@ -8,6 +8,7 @@ const VAULT_REPO = 'github.com/ShakedKod/ShakedKodPrivate.git';
 
 const TEMP_DIR = path.join(process.cwd(), 'temp_vault');
 const DEST_VAULT = path.join(process.cwd(), 'vault');
+const PUBLIC_IMAGES_DIR = path.join(process.cwd(), 'public', 'vault-images');
 
 // 2. THE DICTIONARY (Only for permanent structural folders!)
 const DICTIONARY = {
@@ -89,16 +90,8 @@ function syncVault(srcDir, destDir) {
         } else if (ext === '.md') {
             let content = fs.readFileSync(srcPath, 'utf8');
 
-            // Fix Wikilinks
-            content = content.replace(/\[\[(.*?)\]\]/g, (match, linkContent) => {
-                const parts = linkContent.split('|');
-                const linkPath = parts[0];
-                const displayTitle = parts[1] || linkPath.split(/[/\\]/).pop();
-                const translatedLink = translatePath(linkPath);
-                return `[[${translatedLink}|${displayTitle}]]`;
-            });
-
             content = content.replace(/<h1[^>]*>[\s\S]*?<div[^>]*class="page-break"[^>]*>.*?<\/div>\s*/i, '');
+            content = content.replace(/<div[^>]*class="private"[^>]*>.*?<\/div>\s*/gi, '');
 
             // Inject Hebrew Title
             if (!content.startsWith('---')) {
@@ -115,6 +108,28 @@ function syncVault(srcDir, destDir) {
     }
 }
 
+function syncImages(srcDir) {
+    const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+        // Skip hidden folders
+        if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.parentPath.includes("School") || entry.parentPath.includes("Self") || entry.parentPath.includes("Projects")) continue;
+
+        const srcPath = path.join(srcDir, entry.name);
+
+        if (entry.isDirectory()) {
+            syncImages(srcPath); // Recursively search all folders
+        } else {
+            const ext = path.extname(entry.name).toLowerCase();
+            if (['.png', '.jpg', '.jpeg', '.gif', '.svg'].includes(ext)) {
+                const imageDestPath = path.join(PUBLIC_IMAGES_DIR, entry.name);
+                fs.copyFileSync(srcPath, imageDestPath);
+                console.log(`🖼️ Copied image: ${entry.name}`);
+            }
+        }
+    }
+}
+
 // 4. THE CLOUD EXECUTION
 console.log('🔒 Authenticating and cloning private vault...');
 if (!GITHUB_PAT) {
@@ -124,10 +139,15 @@ if (!GITHUB_PAT) {
 
 if (fs.existsSync(TEMP_DIR)) fs.rmSync(TEMP_DIR, { recursive: true, force: true });
 if (fs.existsSync(DEST_VAULT)) fs.rmSync(DEST_VAULT, { recursive: true, force: true });
+if (fs.existsSync(PUBLIC_IMAGES_DIR)) fs.rmSync(PUBLIC_IMAGES_DIR, { recursive: true, force: true });
+
+fs.mkdirSync(PUBLIC_IMAGES_DIR, { recursive: true });
 
 execSync(`git clone https://${GITHUB_PAT}@${VAULT_REPO} ${TEMP_DIR}`, { stdio: 'inherit' });
 
 console.log('🔄 Translating and syncing files...');
+
+syncImages(TEMP_DIR);
 
 const SPECIFIC_FOLDER = path.join(TEMP_DIR, "01 - University", "02 - Technion", "תואר ראשון במדעי המחשב");
 

@@ -141,3 +141,28 @@ export function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/notes'): Tre
         return a.title.localeCompare(b.title, 'he');
     });
 }
+
+export function getSlugToPathMap(): Record<string, string> {
+    const tree = getVaultTree();
+    const map: Record<string, string> = {};
+
+    function traverse(items: TreeItem[]) {
+        for (const item of items) {
+            if (item.isDirectory && item.children) {
+                traverse(item.children);
+            } else if (!item.isDirectory) {
+                // PRIMARY: Map the full, unique Hebrew title
+                map[item.title] = item.path;
+                
+                // FALLBACK: Also map the English slug just in case
+                // We use an IF statement so we don't accidentally overwrite an earlier file
+                if (!map[item.name]) {
+                    map[item.name] = item.path;
+                }
+            }
+        }
+    }
+
+    traverse(tree);
+    return map;
+}

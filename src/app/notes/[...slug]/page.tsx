@@ -3,6 +3,7 @@ import { getAllNoteSlugs, getNoteContent } from '@/lib/vault'; // Adjust path if
 import { renderMarkdownContent } from '@/lib/processor';
 import matter from 'gray-matter';
 import Sidebar from '@/components/Sidebar';
+import DesmosInitializer from '@/components/DesmosInitializer';
 
 export async function generateStaticParams() {
     const slugs = getAllNoteSlugs();
@@ -33,6 +34,7 @@ export default async function NotePage({ params }: { params: { slug: string[] } 
                 className="academic-preview"
                 dangerouslySetInnerHTML={{ __html: contentHtml }}
             />
+            <DesmosInitializer />
         </main>
     );
 }
