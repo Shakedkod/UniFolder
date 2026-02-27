@@ -22,7 +22,7 @@ export default async function NotePage({ params }: { params: { slug: string[] } 
 
     // If parentSlug is empty, it means we are at the root, so go to '/notes'
     // Otherwise, join the remaining parts with a slash
-    const parentUrl = parentSlug.length > 0 ? `/notes/${parentSlug.join('/')}` : '/notes';
+    const parentUrl = parentSlug.length > 0 ? `/notes/${parentSlug.join('/')}` : '/';
 
     // Get the name of the parent folder to display in the button (fallback to 'ראשי' / Main)
     const parentName = parentSlug.length > 0

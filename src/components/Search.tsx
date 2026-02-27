@@ -94,8 +94,10 @@ export default function Search() {
 
     // Focus input when modal opens
     useEffect(() => {
-        if (isOpen && inputRef.current) {
-            setTimeout(() => inputRef.current?.focus(), 50);
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
         }
     }, [isOpen]);
 
@@ -247,7 +249,7 @@ export default function Search() {
                     <input
                         ref={inputRef}
                         className="w-full bg-transparent text-gray-100 placeholder-gray-500 py-4 outline-none text-lg"
-                        placeholder="חיפוש בסיכומים (אינפי, אלגברה, מדמ״ח...)"
+                        placeholder="חיפוש בתיקיה..."
                         value={query}
                         onChange={(e) => handleSearch(e.target.value)}
                         onKeyDown={handleInputKeyDown}
