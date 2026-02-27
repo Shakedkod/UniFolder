@@ -248,3 +248,25 @@ export function getSlugToPathMap(): Record<string, string> {
     traverse(tree);
     return map;
 }
+
+export function getCourseContext(rawPath: string) {
+    // 1. Decode the whole path first to handle Hebrew
+    const decodedPath = decodeURIComponent(rawPath);
+    const allTheParts = decodedPath.split('/').filter(Boolean);
+    // cut the last item which is the file name, we only want the folders for context
+    const parts = allTheParts.slice(0, -1);
+    
+    // 2. Define generic folders to skip
+    const genericFolders = ['שיעורי בית', 'תרגול', 'notes', 'vault', 'tutorials'];
+
+    // 3. Find the course folder (hunt from file upwards)
+    const contextFolder = [...parts].reverse().find(p => {
+        return !genericFolders.includes(p) && !p.endsWith('.md');
+    });
+
+    if (!contextFolder) return "";
+
+    // 4. Translate and clean (Removes Technion code like 01040031)
+    let name = getFriendlyName(contextFolder);
+    return name.replace(/^\d{8}\s*-\s*/, '');
+}

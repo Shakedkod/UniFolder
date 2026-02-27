@@ -156,15 +156,6 @@ function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/notes')
     });
 }
 
-function createSlug(headerText) {
-    return headerText
-        .toLowerCase()
-        .replace(/\$/g, '')          // 1. Strip out KaTeX dollar signs
-        .replace(/[^\w\sא-ת-]/g, '') // 2. Strip punctuation but keep Hebrew, English, numbers, and hyphens
-        .trim()
-        .replace(/\s+/g, '-');       // 3. Replace all spaces with a single hyphen
-}
-
 function generateSearchIndex(vaultTree)
 {
     const index = [];
