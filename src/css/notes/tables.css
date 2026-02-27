@@ -1,0 +1,36 @@
+/* 1. Base table styling for a clean academic look */
+.academic-preview table {
+    width: 100%;
+    margin: 2rem 0;
+    border-collapse: collapse;
+    background-color: #171717; /* Matches your dark theme */
+    border: 1px solid #374151;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* 2. Style the header row */
+.academic-preview th {
+    background-color: rgba(251, 146, 60, 0.1); /* Subtle orange tint */
+    color: #fb923c; /* Orange-400 */
+    padding: 12px;
+    font-weight: 600;
+    border-bottom: 2px solid #374151;
+}
+
+/* 3. THE ZEBRA STRIPING */
+/* This targets every even row (2, 4, 6, etc.) */
+.academic-preview tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.03); /* Very subtle gray lift */
+}
+
+/* 4. Optional: Highlight row on hover to help focus */
+.academic-preview tr:hover {
+    background-color: rgba(251, 146, 60, 0.05); /* Slight orange glow on hover */
+}
+
+.academic-preview td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #1f2937;
+    text-align: center;
+}

@@ -1,0 +1,79 @@
+@import "./notes/math.css";
+@import "./notes/graphviz.css";
+@import "./notes/tables.css";
+@import "./notes/callout.css";
+
+.academic-preview h1 {
+    @apply text-2xl font-bold mt-8 mb-4 pb-2 text-gray-100;
+}
+
+.academic-preview h2 {
+    @apply text-xl font-bold mt-6 mb-3 pb-1 text-gray-200;
+}
+
+.academic-preview h3 {
+    @apply text-lg font-bold mt-5 mb-2 text-gray-200 decoration-gray-600 underline-offset-4;
+}
+
+.academic-preview p {
+    @apply text-sm md:text-base leading-snug my-2;
+}
+
+.academic-preview ul {
+    @apply list-disc list-outside my-2 pr-6 space-y-1 text-sm md:text-base marker:text-gray-500;
+}
+
+.academic-preview ol {
+    @apply list-decimal list-outside my-2 pr-6 space-y-1 text-sm md:text-base marker:text-gray-500;
+}
+
+.academic-preview li {
+    @apply pl-2;
+}
+
+.academic-preview img {
+    @apply rounded-md max-w-full h-auto my-3 mx-auto;
+}
+
+.academic-preview table {
+    @apply w-full text-sm text-right border-collapse my-5;
+}
+
+.academic-preview thead {
+    @apply bg-gray-800/80 border-b-2 border-gray-500;
+}
+
+.academic-preview th {
+    @apply px-4 py-2 font-bold text-gray-200 border border-gray-700;
+}
+
+.academic-preview td {
+    @apply px-4 py-2 border border-gray-700;
+}
+
+.academic-preview blockquote {
+    @apply border-r-4 border-gray-500 pr-4 my-4 bg-gray-800/40 py-2 rounded-l-md;
+}
+
+.academic-preview hr {
+    @apply my-6 border-gray-600;
+}
+
+.academic-preview pre {
+    @apply p-4 overflow-x-auto text-sm font-mono leading-relaxed rounded-lg border border-gray-700 bg-[#1e1e1e] my-4;
+    direction: ltr;
+}
+
+.obsidian-image {
+    max-width: 100%;    /* Never overflow the parent container */
+    height: auto;       /* Maintain aspect ratio */
+    display: block;     /* Prevent inline text alignment issues */
+    margin: 1.5rem 0;   /* Consistent spacing in academic notes */
+    border-radius: 4px; /* Matches your UI aesthetic */
+}
+
+/* Center images by default if they are smaller than the line width */
+article.academic-preview .obsidian-image {
+    margin-left: auto;
+    margin-right: auto;
+}

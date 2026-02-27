@@ -1,0 +1,14 @@
+/* --- Graphviz Diagram Styling --- */
+.academic-preview .graphviz-container {
+    display: flex;
+    justify-content: center;
+    margin: 2.5rem 0;
+    overflow-x: auto;
+}
+
+.academic-preview .graphviz-container svg {
+    max-width: 100%;
+    height: auto !important;
+
+    filter: invert(1) hue-rotate(180deg);
+}

@@ -23,6 +23,88 @@ const FOLDER_DICTIONARY: Record<string, string> = {
 
 const VAULT_DIRECTORY = path.join(process.cwd(), 'vault');
 
+export function isVaultDirectory(slug: string[]): boolean {
+    const fullPath = path.join(VAULT_DIRECTORY, ...slug);
+    try {
+        return fs.statSync(fullPath).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+function getFolderMap(): Record<string, string> {
+    try {
+        const mapPath = path.join(VAULT_DIRECTORY, 'folder-map.json');
+        if (fs.existsSync(mapPath)) {
+            const fileContents = fs.readFileSync(mapPath, 'utf8');
+            return JSON.parse(fileContents);
+        }
+    } catch (error) {
+        console.error("Failed to load folder-map.json:", error);
+    }
+    return {};
+}
+
+const FOLDER_MAP = getFolderMap();
+
+export function getFriendlyName(slug: string): string {
+    return FOLDER_MAP[slug] || slug;
+}
+
+export function getFolderContents(slug: string[]) {
+    const fullPath = path.join(VAULT_DIRECTORY, ...slug);
+    
+    // Read the directory contents
+    const items = fs.readdirSync(fullPath, { withFileTypes: true });
+
+    return items
+        // Filter out hidden files or obsidian system folders
+        .filter(item => !item.name.startsWith('.') && item.name !== '_attachments')
+        .map(item => {
+            const isDir = item.isDirectory();
+            const cleanName = item.name.replace('.md', '');
+
+            let displayName = cleanName;
+
+            if (isDir) {
+                // 1. If it's a folder, use our JSON dictionary
+                displayName = getFriendlyName(cleanName);
+            } else if (item.name.endsWith('.md')) {
+                // 2. If it's a file, peek inside its frontmatter for the real title!
+                try {
+                    const filePath = path.join(fullPath, item.name);
+                    const fileContents = fs.readFileSync(filePath, 'utf8');
+                    const { data } = matter(fileContents);
+                    
+                    if (data.title) {
+                        displayName = data.title;
+                    }
+                } catch (err) {
+                    console.error(`Failed to read frontmatter for ${item.name}`, err);
+                }
+            }
+            
+            return {
+                name: cleanName,
+                displayName: displayName,
+                isDirectory: isDir,
+                // Build the URL path for the Next.js Link component
+                href: `/notes/${slug.join('/')}/${cleanName}`
+            };
+        })
+        // Sort folders first, then files alphabetically
+        .sort((a, b) => {
+            // 1. Always keep folders at the top of the grid
+            if (a.isDirectory !== b.isDirectory) {
+                return a.isDirectory ? -1 : 1;
+            }
+            
+            // 2. Use "Natural Sorting" on the display name
+            // 'numeric: true' forces JS to treat "11" as the number 11, not the string "1" + "1"
+            return a.displayName.localeCompare(b.displayName, 'he', { numeric: true });
+        });
+}
+
 function getAllFilesRecursively(dir: string, fileList: string[] = []): string[] {
     const files = fs.readdirSync(dir);
 

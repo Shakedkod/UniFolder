@@ -1,0 +1,171 @@
+/* ==========================================================================
+   OBSIDIAN CALLOUT STYLES (Mapped for Next.js)
+   ========================================================================== */
+
+/* 1. Base Callout Styling */
+.academic-preview .callout {
+    background-color: transparent;
+    margin: 1.5rem 0;
+    padding: 1rem;
+}
+
+.academic-preview .callout-title {
+    font-family: serif;
+    /* Matches CMU Serif / Times from your snippet */
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 0.5rem;
+}
+
+/* 2. Theorems, Axioms, Definitions, Claims, Lemmas (Full Border) */
+.academic-preview .callout[data-callout="theorem"],
+.academic-preview .callout[data-callout="axiom"],
+.academic-preview .callout[data-callout="definition"],
+.academic-preview .callout[data-callout="claim"],
+.academic-preview .callout[data-callout="lemma"] {
+    border: 1px solid #d1d5db;
+    /* Mapped to var(--text-normal) */
+    border-radius: 0.5rem;
+}
+
+/* 3. Remarks (Gray text, no border) */
+.academic-preview .callout[data-callout="remark"] {
+    color: #9ca3af;
+    /* Gray */
+    border: none;
+    padding: 0.5rem 0;
+    /* Tighter padding for remarks */
+}
+
+.academic-preview .callout[data-callout="remark"] .callout-title {
+    color: #9ca3af;
+}
+
+/* 4. Corollaries (Underlined title, no border) */
+.academic-preview .callout[data-callout="corollary"] {
+    border: none;
+    padding: 0.5rem 0;
+}
+
+.academic-preview .callout[data-callout="corollary"] .callout-title {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+/* 5. Examples, Exercises, Hypotheses (Rounded Right Line) */
+.academic-preview .callout[data-callout="example"],
+.academic-preview .callout[data-callout="exercise"],
+.academic-preview .callout[data-callout="hypothesis"] {
+    position: relative;
+    border: none;
+    padding: 1rem 1.5rem 1rem 0;
+}
+
+/* Draw the curved bracket using an empty box with only a right border */
+.academic-preview .callout[data-callout="example"]::before,
+.academic-preview .callout[data-callout="exercise"]::before,
+.academic-preview .callout[data-callout="hypothesis"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    /* Controls how far inwards the curve reaches */
+
+    /* Draw the actual line */
+    border-right: 2px solid;
+
+    /* Transparent top/bottom borders force the browser to render a perfectly smooth taper */
+    border-top: 2px solid transparent;
+    border-bottom: 2px solid transparent;
+
+    /* The magic: rounding the right corners forces the right border to curve inwards */
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+
+    pointer-events: none;
+}
+
+/* Apply the specific colors using border-color (NOT background-color!) */
+.academic-preview .callout[data-callout="example"]::before {
+    border-right-color: #007acc;
+}
+
+.academic-preview .callout[data-callout="example"] .callout-title {
+    color: #007acc;
+}
+
+.academic-preview .callout[data-callout="exercise"]::before {
+    border-right-color: #1b7400;
+}
+
+.academic-preview .callout[data-callout="exercise"] .callout-title {
+    color: #1b7400;
+}
+
+.academic-preview .callout[data-callout="hypothesis"]::before {
+    border-right-color: #ff99cc;
+}
+
+.academic-preview .callout[data-callout="hypothesis"] .callout-title {
+    color: #ff99cc;
+}
+
+/* 6. Custom Homework Callout */
+.academic-preview .callout[data-callout="hw"] {
+    border: 3px solid red;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.academic-preview .callout[data-callout="hw"] .callout-title {
+    width: 100%;
+    font-size: 1.6em;
+    font-weight: 900;
+    color: red;
+    text-transform: uppercase;
+    padding-bottom: 6px;
+    border-bottom: 2px solid red;
+    text-align: center;
+}
+
+/* --- Obsidian Images & Excalidraws --- */
+.academic-preview .obsidian-image {
+    display: block;
+    margin: 2rem auto;
+    /* Centers the image perfectly */
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* Optional: Slight dark-mode inversion for Excalidraw SVGs 
+   (so black hand-drawn lines turn white) */
+.academic-preview img[src*=".excalidraw.svg"] {
+    filter: invert(1) hue-rotate(180deg);
+}
+
+/* --- Global Smart Link Styling --- */
+/* Targets all links EXCEPT our hidden Obsidian block ID anchors */
+.academic-preview a:not(.obsidian-block-anchor) {
+    color: #fb923c;
+    /* Tailwind orange-400 */
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.15s ease-in-out;
+}
+
+.academic-preview a:not(.obsidian-block-anchor):hover {
+    color: #fdba74;
+    /* Tailwind orange-300 */
+}
+
+/* This ensures the target isn't glued to the very top */
+.callout:target, 
+.obsidian-block-anchor:target {
+    scroll-margin-top: 25vh; /* Starts the scroll 25% down the screen */
+    outline: 2px solid #fb923c; /* Briefly highlight the target */
+    outline-offset: 4px;
+    border-radius: 4px;
+}

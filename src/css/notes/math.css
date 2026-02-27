@@ -1,0 +1,120 @@
+.katex,
+.katex-display {
+    direction: ltr;
+    unicode-bidi: isolate;
+    text-align: left;
+}
+
+.katex-display {
+    margin: 1em 0;
+    overflow-x: auto;
+    /* Adds scrollbar if equation is too wide */
+    overflow-y: hidden;
+}
+
+.katex .sq-bracket,
+.katex .sq-overbracket {
+    position: relative;
+}
+
+.katex .sq-bracket::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Align to the bottom of the invisible strut we added */
+    height: 0.25em;
+    /* This controls the height of the little vertical 'ticks' */
+    border-bottom: 1px solid currentColor;
+    border-left: 1px solid currentColor;
+    border-right: 1px solid currentColor;
+    pointer-events: none;
+}
+
+.katex .sq-overbracket::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 0.25em;
+    border-top: 1px solid currentColor;
+    border-left: 1px solid currentColor;
+    border-right: 1px solid currentColor;
+    pointer-events: none;
+}
+
+/* --- Hide Scrollbars for Math and Diagrams --- */
+.academic-preview .katex-display,
+.academic-preview .graphviz-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    /* Firefox */
+    scrollbar-width: none;
+
+    /* IE and Edge */
+    -ms-overflow-style: none;
+}
+
+/* Chrome, Safari, and Opera */
+.academic-preview .katex-display::-webkit-scrollbar,
+.academic-preview .graphviz-container::-webkit-scrollbar {
+    display: none;
+}
+
+/* --- Academic Formula Sheet Styling --- */
+.academic-preview {
+    color: #d1d5db;
+    /* text-gray-300 */
+}
+
+.math-cancel {
+    /* Diagonal line from bottom-left to top-right */
+    background: linear-gradient(to top right,
+            transparent calc(50% - 1px),
+            currentColor calc(50%),
+            transparent calc(50% + 1px));
+    padding: 0 0.15em;
+    /* Gives the line slight breathing room */
+}
+
+.math-bcancel {
+    /* Diagonal line from top-left to bottom-right */
+    background: linear-gradient(to bottom right,
+            transparent calc(50% - 1px),
+            currentColor calc(50%),
+            transparent calc(50% + 1px));
+    padding: 0 0.15em;
+}
+
+.math-xcancel {
+    /* X-cross (Applies both gradients simultaneously) */
+    background:
+        linear-gradient(to top right, transparent calc(50% - 1px), currentColor calc(50%), transparent calc(50% + 1px)),
+        linear-gradient(to bottom right, transparent calc(50% - 1px), currentColor calc(50%), transparent calc(50% + 1px));
+    padding: 0 0.15em;
+}
+
+/* --- Halmos --- */
+.academic-preview .halmos {
+    float: left;
+    color: white;
+    font-size: 1.2em;
+    line-height: 1;
+    margin-top: 0.1rem;
+    margin-left: 0.5rem;
+}
+
+.academic-preview p:has(.halmos) {
+    display: flow-root;
+}
+
+/* --- MathJax Backwards-Hebrew Hack Support --- */
+/* Forces KaTeX to blindly render characters left-to-right just like Obsidian's MathJax.
+   This perfectly restores Hebrew text that was intentionally typed backwards. */
+.academic-preview .katex {
+    direction: ltr !important;
+    unicode-bidi: bidi-override;
+}

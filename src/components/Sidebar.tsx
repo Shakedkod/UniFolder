@@ -1,24 +1,15 @@
 "use client";
 
+import { TocItem, CalloutItem } from "@/lib/toc";
 import { useEffect, useState } from "react";
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 // import { ArrowLeft, ArrowRight, ArrowUp } from "lucide-react"; // Bring back if you use them
-
-interface CalloutItem {
-    id: string;
-    title: string;
-    type: string;
-}
-
-interface TOCItem {
-    id: string;
-    title: string;
-    level: number;
-    callouts: CalloutItem[];
-}
 
 interface NavigatorContent {
     title: string;
-    toc: TOCItem[];
+    toc: TocItem[];
 }
 
 export default function Sidebar({ content }: { content: NavigatorContent }) {
@@ -59,7 +50,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
     return (
         <div
             /* The long classes at the end hide the scrollbar natively across Chrome/Firefox/Safari */
-            className="w-auto h-auto p-4 lg:p-10 flex flex-col justify-start items-start sticky top-0 max-h-screen overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="w-auto h-auto p-4 lg:p-10 flex flex-col justify-start items-start sticky top-0 max-h-screen overflow-y-auto no-scrollbar"
             dir="rtl"
         >
             <a href="/toc">
@@ -71,18 +62,28 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
 
             <div className="w-full">
                 <ul className="flex flex-col space-y-2">
-                    {content.toc?.map((item: TOCItem) => {
+                    {content.toc?.map((item: TocItem) => {
                         const isSectionActive = activeHeadingId === item.id;
+                        const displayTitle = item.title.replace(/\$/g, '');
 
                         return (
                             <li key={item.id} className="my-1 flex flex-col">
                                 {/* 1. The Main Heading Link */}
                                 <a
-                                    href={`#${item.id}`}
+                                    href={`#${item.slug}`}
                                     className={`transition-colors font-medium ${isSectionActive ? "text-blue-400" : "text-gray-300 hover:text-white"
                                         }`}
                                 >
-                                    {item.title}
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkMath]}
+                                        rehypePlugins={[rehypeKatex]}
+                                        components={{
+                                            // Prevent ReactMarkdown from wrapping titles in <p> tags
+                                            p: ({ node, ...props }) => <span {...props} />
+                                        }}
+                                    >
+                                        {item.title}
+                                    </ReactMarkdown>
                                 </a>
 
                                 {/* 2. The Collapsible Definitions List */}

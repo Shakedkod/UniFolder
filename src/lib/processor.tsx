@@ -13,6 +13,11 @@ import { visit } from 'unist-util-visit';
 import { instance } from '@viz-js/viz';
 import { getSlugToPathMap } from './vault';
 
+// Move your IconMap here!
+const IconMap: Record<string, string> = {
+    'LiHeart': '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>'
+};
+
 // The TOC Extractor
 const extractTOCPlugin = () => (tree: any, file: any) => {
     file.data.toc = [];
@@ -236,10 +241,9 @@ export async function renderMarkdownContent(markdownContent: string) {
     const linkMap = new Map<string, string>();
     let linkCounter = 0;
 
-    const titleMap = new Map<string, string>();
-    let titleCounter = 0;
-
     var processedContent = markdownContent
+        .replace(/\u00a0/g, ' ')
+        .replace(/^\|[ \t]*:?-+:?[ \t]*(?=\|)/gm, (match) => match.replace(/[ \t]/g, ''))
         .replace(/\$\$(.+?)\$\$/g, (match, equation) => `\n$$\n${equation.trim()}\n$$\n`)
         .replace(/\\begin\{align\}([\s\S]*?)\\end\{align\}/g, '\\begin{align*}$1\\end{align*}')
         .replace(/(^|\n)(?![ \t]*>)([^\n]+)\r?\n([ \t]*>)/g, '$1$2\n\n$3')
@@ -250,27 +254,38 @@ export async function renderMarkdownContent(markdownContent: string) {
         .replace(/(?:\n|\s)\^([a-zA-Z0-9]{5,})(?=\s|$)/g, '\n<a id="$1" class="obsidian-block-anchor"></a>\n')
         .replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, filename, meta) => {
             let cleanFilename = filename.trim();
-            
-            // Route Excalidraw files to their auto-exported SVGs
-            if (cleanFilename.endsWith('.excalidraw')) {
-                cleanFilename += '.svg'; 
-            }
-    
-            // Parse Obsidian's size metadata (e.g., "|400")
-            let widthAttr = '';
+            if (cleanFilename.endsWith('.excalidraw')) cleanFilename += '.svg';
+
+            let styles = "";
+            let widthAttr = "";
+            let heightAttr = "";
+
             if (meta) {
-                const widthMatch = meta.match(/^(\d+)/); 
-                if (widthMatch) {
-                    widthAttr = ` width="${widthMatch[1]}"`;
+                // 1. Check for width x height (e.g., 400x200)
+                const dimMatch = meta.match(/^(\d+)x(\d+)/);
+                if (dimMatch) {
+                    widthAttr = ` width="${dimMatch[1]}"`;
+                    heightAttr = ` height="${dimMatch[2]}"`;
+                    styles = `style="width: ${dimMatch[1]}px; height: ${dimMatch[2]}px; object-fit: contain;"`;
+                } else {
+                    // 2. Check for width only (e.g., 400)
+                    const widthMatch = meta.match(/^(\d+)/);
+                    if (widthMatch) {
+                        widthAttr = ` width="${widthMatch[1]}"`;
+                        styles = `style="width: ${widthMatch[1]}px; height: auto;"`;
+                    }
                 }
             }
-            
+            else
+            {
+                widthAttr = ` width="400"`;
+                styles = 'style="width: 400px; height: auto;"';
+            }
+
             const safeUrl = `/vault-images/${encodeURIComponent(cleanFilename)}`;
-            
-            // THE FIX: We added &#8203; (a Zero-Width Space) at the very beginning!
-            // This stops Next.js from mistaking the line for a raw HTML block,
-            // preventing it from swallowing the math equations on the lines below it.
-            return `&#8203;<img src="${safeUrl}"${widthAttr} class="obsidian-image" alt="${cleanFilename}" loading="lazy" />`;
+
+            // Using dangerouslySetInnerHTML requires standard img tags for string injection
+            return `&#8203;<img src="${safeUrl}"${widthAttr}${heightAttr} ${styles} class="obsidian-image" alt="${cleanFilename}" loading="lazy" />`;
         })
         .replace(/(?<!\!)\[\[(.*?)\]\]/g, (match, linkContent) => {
             // 1. Extract the title and target
@@ -299,20 +314,31 @@ export async function renderMarkdownContent(markdownContent: string) {
 
             return placeholder;
         })
-        .replace(/`?\\end\{proof\}`?/g, '<span class="halmos">∎</span>');
+        .replace(/`?\\end\{proof\}`?/g, '<span class="halmos">∎</span>')
+        .replace(/:([a-zA-Z0-9_-]+):/g, (match, iconName) => {
+            const svgString = IconMap[iconName];
+
+            if (svgString) {
+                return `<span class="inline-flex items-center align-middle mx-1">${svgString}</span>`;
+            }
+
+            // Fallback for icons you haven't mapped yet
+            return match;
+        });
 
     try {
         const processor = unified()
             .use(remarkParse)
+            .use(remarkGfm)
             .use(remarkBreaks)
             .use(remarkGraphviz)
             .use(remarkDesmos)
             .use(remarkFrontmatter, ['yaml'])
             .use(remarkMath)
-            .use(remarkGfm)
             .use(remarkRehype, { allowDangerousHtml: true })
             .use(rehypeRaw)
             .use(rehypeObsidianCallouts)
+            .use(rehypeSlug)
             .use(rehypeKatex, {
                 trust: true,
                 strict: "ignore",
@@ -327,7 +353,6 @@ export async function renderMarkdownContent(markdownContent: string) {
                     "\\cases": "\\begin{cases} #1 \\end{cases}"
                 }
             })
-            .use(rehypeSlug)
             .use(extractTOCPlugin)
             .use(rehypeStringify, { allowDangerousHtml: true });
 
@@ -336,14 +361,6 @@ export async function renderMarkdownContent(markdownContent: string) {
 
         for (const [placeholder, html] of linkMap.entries()) {
             contentHtml = contentHtml.split(placeholder).join(html);
-        }
-
-        for (const [placeholder, realTitle] of titleMap.entries()) {
-            // This regex brillianty hunts down our placeholder AND whatever annoying 
-            // default text (like "הגדרה 1 ()") Next.js tried to wrap around it inside the HTML tag!
-            // Example: >הגדרה 1 (CALLOUTTITLE0X)< becomes >הגדרה 10.1 (העתקה ליניארית)<
-            const regex = new RegExp(`>[^<]*?${placeholder}[^<]*?<`, 'g');
-            contentHtml = contentHtml.replace(regex, `>${realTitle}<`);
         }
 
         return {
