@@ -10,6 +10,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.6.1",
     "@viz-js/viz": "^3.24.0",
     "fs": "^0.0.1-security",
     "github-slugger": "^2.0.0",

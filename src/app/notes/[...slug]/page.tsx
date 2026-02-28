@@ -142,22 +142,11 @@ export default async function NotePage({ params }: { params: { slug: string[] } 
     return (
         <main className={`flex flex-row w-full h-full lg:grid lg:grid-cols-[auto_1fr]`}>
             <div className="lg:sticky">
-                <Sidebar content={{ title, toc }} />
+                <Sidebar content={{ title, toc, parent: { url: parentUrl, name: parentName } }} />
             </div>
 
             <Suspense fallback={<Loading />}>
                 <div className="flex flex-col w-full px-8 py-6" dir="rtl">
-                    {/* BACK BUTTON FOR FILES */}
-                    <div className="mb-6 border-b border-gray-800 pb-4">
-                        <Link
-                            href={parentUrl}
-                            className="inline-flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors text-sm font-medium"
-                        >
-                            <ArrowRight size={16} />
-                            <span>חזור לתיקייה: {parentName}</span>
-                        </Link>
-                    </div>
-
                     <article
                         className="academic-preview w-full"
                         dangerouslySetInnerHTML={{ __html: contentHtml }}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import 'katex/dist/katex.min.css';
+import { Analytics } from '@vercel/analytics/react';
 import Search from "@/components/Search";
 
 const geistSans = Geist({
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: Readonly<{children: React.React
             <body className={ `${geistSans.variable} ${geistMono.variable} antialiased` }>
                 <Search />
                 { children }
+                <Analytics />
             </body>
         </html>
     );

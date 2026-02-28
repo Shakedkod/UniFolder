@@ -122,18 +122,28 @@ export default function Search() {
                 const bodyContent = rawContent.toLowerCase();
 
                 // 1. TITLE SCORING
-                if (title === queryLower) score += 100;
-                else if (title.startsWith(queryLower)) score += 50;
-                else if (title.includes(queryLower)) score += 30;
+                let titleScore = 0;
+                if (title === queryLower) {
+                    titleScore = 100000;
+                } else if (title.includes(queryLower)) {
+                    titleScore = 50000;
+
+                    // DEPTH PENALTY:
+                    // If the title contains '>', it's a section. 
+                    // We subtract a small amount so "File" > "File > Section"
+                    const depth = (title.match(/>/g) || []).length;
+                    titleScore -= (depth * 1000);
+                }
 
                 // 2. CONTENT SCORING (Crucial for showing results where query is not in the filename)
                 // We give a base score if the content matches, ensuring it passes the filter
+                let contentScore = 0;
                 if (bodyContent.includes(queryLower)) {
-                    score += 20; // Base score for content match
+                    contentScore += 40; // Base score for content match
 
                     // Bonus score based on how many times it appears
                     const occurrences = (bodyContent.match(new RegExp(queryLower, 'g')) || []).length;
-                    score += Math.min(occurrences * 5, 30);
+                    contentScore += Math.min(occurrences * 2, 20);
 
                     // Snippet generation logic remains the same
                     const matchIndex = bodyContent.indexOf(queryLower);
@@ -163,33 +173,32 @@ export default function Search() {
                     item.displayExcerpt = (item.excerpt || "").slice(0, 100);
                 }
 
+                let categoryMultiplier = item.isLecture ? 10 : item.isTutorial ? 5 : 1;
+                let finalContentScore = contentScore * categoryMultiplier;
+                score = titleScore + finalContentScore;
+
                 // 3. CATEGORY DETECTION (Using the API-provided flags)
                 const path = (item.path || "").toLowerCase();
                 const isHomework = item.isHomework || path.includes('שיעורי בית');
                 const isTutorial = item.isTutorial || path.includes('תרגול') || path.includes("tutorials");
                 const isLecture = item.isLecture || (/^\d+/.test(item.title) && !isHomework && !isTutorial);
 
-                return { ...item, score, isLecture, isTutorial, isHomework };
+                return { ...item, score, isLecture, isTutorial, isHomework, isTitleMatch: titleScore > 0 };
             }).filter((item: any) => item.score > 0) // Now content matches have a score of 20+
                 .sort((a: any, b: any) => {
-                    // 1. Group by Category Weight
-                    // Lectures (Weight 1) < Tutorials (Weight 2) < Homework (Weight 3)
+                    // 1. Group by Category
                     const getWeight = (item: any) => item.isLecture ? 1 : item.isTutorial ? 2 : 3;
-
                     const weightA = getWeight(a);
                     const weightB = getWeight(b);
+                    if (weightA !== weightB) return weightA - weightB;
 
-                    if (weightA !== weightB) {
-                        return weightA - weightB;
+                    // 2. Within that category, put Title Matches first
+                    if (a.isTitleMatch !== b.isTitleMatch) {
+                        return a.isTitleMatch ? -1 : 1;
                     }
 
-                    // 2. If same category, sort by Score
-                    if (b.score !== a.score) {
-                        return b.score - a.score;
-                    }
-
-                    // 3. If scores are tied, use natural numeric sorting
-                    return a.title.localeCompare(b.title, 'he', { numeric: true });
+                    // 3. Within those groups, sort by raw score
+                    return b.score - a.score;
                 });
 
             setTotalResults(scoredResults.length);

@@ -156,6 +156,17 @@ function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/notes')
     });
 }
 
+function cleanMarkdown(text) {
+    return text
+        .replace(/!\[\[.*?\]\]/g, '')         // Remove image embeds
+        .replace(/\[\[(.*?)\]\]/g, '$1')      // Simplify internal links
+        .replace(/>\s*\[!.*?\][+-]?/g, '')    // Remove callout headers
+        .replace(/#\w+/g, '')                 // Remove hashtags
+        .replace(/---[\s\S]*?---/g, '')       // Remove YAML frontmatter
+        .replace(/\n/g, ' ')                  // Flatten to single line
+        .trim();
+}
+
 function generateSearchIndex(vaultTree)
 {
     const index = [];
@@ -194,8 +205,8 @@ function generateSearchIndex(vaultTree)
                     index.push({
                         title: `${item.title} > ${header}`,
                         path: `${item.path}#${slugger.slug(cleanHeaderForSlug)}`,
-                        content: fullBodyText, // The search engine will read this
-                        excerpt: fullBodyText.substring(0, 150) + "...", // Fallback for the UI
+                        content: cleanMarkdown(fullBodyText), // The search engine will read this
+                        excerpt: cleanMarkdown(fullBodyText.substring(0, 150) + "..."), // Fallback for the UI
                         priority: 2
                     });
                 });

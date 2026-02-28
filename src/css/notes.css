@@ -4,15 +4,27 @@
 @import "./notes/callout.css";
 
 .academic-preview h1 {
-    @apply text-2xl font-bold mt-8 mb-4 pb-2 text-gray-100;
+    @apply text-4xl font-bold mt-8 mb-4 pb-2 text-[#FF8C00] text-center;
 }
 
 .academic-preview h2 {
-    @apply text-xl font-bold mt-6 mb-3 pb-1 text-gray-200;
+    @apply text-3xl font-bold mt-6 mb-3 pb-1 text-[#E67600];
 }
 
 .academic-preview h3 {
-    @apply text-lg font-bold mt-5 mb-2 text-gray-200 decoration-gray-600 underline-offset-4;
+    @apply text-2xl font-bold mt-5 mb-2 text-[#CD6000] decoration-gray-600 underline-offset-4;
+}
+
+.academic-preview h4 {
+    @apply text-xl font-semibold mt-4 mb-2 text-[#B34A00];
+}
+
+.academic-preview h5 {
+    @apply text-lg font-semibold mt-3 mb-1 text-[#9A3400];
+}
+
+.academic-preview h6 {
+    @apply text-base font-semibold mt-2 mb-1 text-[#a1352d];
 }
 
 .academic-preview p {
@@ -65,11 +77,16 @@
 }
 
 .obsidian-image {
-    max-width: 100%;    /* Never overflow the parent container */
-    height: auto;       /* Maintain aspect ratio */
-    display: block;     /* Prevent inline text alignment issues */
-    margin: 1.5rem 0;   /* Consistent spacing in academic notes */
-    border-radius: 4px; /* Matches your UI aesthetic */
+    max-width: 100%;
+    /* Never overflow the parent container */
+    height: auto;
+    /* Maintain aspect ratio */
+    display: block;
+    /* Prevent inline text alignment issues */
+    margin: 1.5rem 0;
+    /* Consistent spacing in academic notes */
+    border-radius: 4px;
+    /* Matches your UI aesthetic */
 }
 
 /* Center images by default if they are smaller than the line width */
