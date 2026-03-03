@@ -9,6 +9,8 @@
 .academic-preview .graphviz-container svg {
     max-width: 100%;
     height: auto !important;
+}
 
+.dark .academic-preview .graphviz-container svg, .night .academic-preview .graphviz-container svg, .deep-ocean .academic-preview .graphviz-container svg {
     filter: invert(1) hue-rotate(180deg);
 }
