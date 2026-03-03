@@ -11,6 +11,7 @@ import rehypeStringify from 'rehype-stringify';
 import remarkBreaks from 'remark-breaks';
 import { visit } from 'unist-util-visit';
 import { instance } from '@viz-js/viz';
+import rehypeHighlight from 'rehype-highlight';
 import { getSlugToPathMap } from './vault';
 
 // Move your IconMap here!
@@ -94,6 +95,13 @@ const remarkGraphviz = () => async (tree: any) => {
     }
 };
 
+const parseMathInTitle = (title: string) => {
+    // This regex finds $math$ and wraps it in a span that KaTeX will definitely see
+    return title.replace(/\$(.*?)\$/g, (_, math) => {
+        return `<span class="inline-math">$${math}$</span>`;
+    });
+};
+
 // The Advanced Callout Transformer Plugin
 const rehypeObsidianCallouts = () => {
     return (tree: any, file: any) => {
@@ -104,63 +112,95 @@ const rehypeObsidianCallouts = () => {
                 const firstChild = node.children.find((c: any) => c.tagName === 'p');
                 if (!firstChild) return;
 
-                const textNode = firstChild.children[0];
-                if (textNode && textNode.type === 'text') {
-                    // Regex to capture the type, the optional modifier (|num or |*), and the title
-                    const match = textNode.value.match(/^\[!([^\]]+)\](.*)/);
+                const firstTextNode = firstChild.children[0];
+                if (firstTextNode && firstTextNode.type === 'text') {
+                    const match = firstTextNode.value.match(/^\[!([^\]]+)\](.*)/);
 
                     if (match) {
                         const rawType = match[1];
                         const parts = rawType.split('|');
                         const calloutType = parts[0].toLowerCase();
-                        const modifier = parts.length > 1 ? parts[1].trim() : null; // gets '*' or '3.1.2'
+                        const modifier = parts.length > 1 ? parts[1].trim() : null;
 
-                        let userTitle = match[2].trim();
-
-                        // Hebrew dictionary for standard Math Booster types
+                        // (Keep your defaults, mathTypes, and numberStr logic here...)
                         const defaults: Record<string, string> = {
                             theorem: 'משפט', axiom: 'אקסיומה', definition: 'הגדרה',
                             claim: 'טענה', lemma: 'למה', corollary: 'מסקנה',
                             example: 'דוגמה', exercise: 'תרגיל', hypothesis: 'השערה',
                             remark: 'הערה', hw: 'שיעורי בית'
                         };
+                        const mathTypes = ['theorem', 'axiom', 'definition', 'claim', 'lemma', 'corollary', 'example', 'exercise', 'hypothesis'];
 
-                        // Define which types trigger auto-numbering
-                        const mathTypes = [
-                            'theorem', 'axiom', 'definition', 'claim', 'lemma',
-                            'corollary', 'example', 'exercise', 'hypothesis'
-                        ];
-
-                        // 1. Logic for Numbering
                         let numberStr = "";
-                        if (modifier === "*") {
-                            numberStr = ""; // Hide number
-                        } else if (modifier) {
-                            numberStr = ` ${modifier}`; // Use explicit number (e.g. 3.1.2)
-                        } else if (mathTypes.includes(calloutType)) {
-                            // Auto-increment if empty and is a math type
+                        if (modifier === "*") numberStr = ""; 
+                        else if (modifier) numberStr = ` ${modifier}`; 
+                        else if (mathTypes.includes(calloutType)) {
                             counters[calloutType] = (counters[calloutType] || 0) + 1;
                             numberStr = ` ${counters[calloutType]}`;
                         }
 
-                        // 2. Logic for the Display Title
-                        const typeName = defaults[calloutType] || calloutType.charAt(0).toUpperCase() + calloutType.slice(1);
+                        // --- THE NEW FIX: Extracting Math Nodes into the Title ---
+                        let titleNodes: any[] = [];
 
-                        // Replicate Math Booster formatting: "Type Number (Title)"
-                        let displayTitle = `${typeName}${numberStr}`;
-                        if (userTitle) {
-                            displayTitle += ` (${userTitle})`;
+                        // 1. Remove the [!theorem] part from the first text node
+                        firstTextNode.value = match[2].trimStart();
+
+                        // 2. Loop through the paragraph's children until we hit a newline
+                        let splitIndex = -1;
+                        for (let i = 0; i < firstChild.children.length; i++) {
+                            const child = firstChild.children[i];
+
+                            if (child.type === 'text' && child.value.includes('\n')) {
+                                const textParts = child.value.split('\n');
+                                if (textParts[0]) {
+                                    titleNodes.push({ type: 'text', value: textParts[0] });
+                                }
+                                // Keep the rest of the text for the body
+                                child.value = textParts.slice(1).join('\n').trimStart();
+                                splitIndex = i;
+                                break;
+                            } else if (child.tagName === 'br') {
+                                splitIndex = i;
+                                break;
+                            } else {
+                                titleNodes.push(child);
+                            }
                         }
 
-                        // Remove the syntax line from the actual content
-                        textNode.value = textNode.value.replace(/^\[!([^\]]+)\][^\n]*/, '').trimStart();
+                        // 3. Remove the extracted title nodes from the body paragraph
+                        if (splitIndex !== -1) {
+                            if (firstChild.children[splitIndex].tagName === 'br') {
+                                firstChild.children.splice(0, splitIndex + 1);
+                            } else {
+                                firstChild.children.splice(0, splitIndex);
+                            }
+                        } else {
+                            firstChild.children = []; // Entire paragraph was the title
+                        }
 
-                        // 3. Transform the HTML structure
+                        // Clean up leading empty text node in body if any
+                        if (firstChild.children.length > 0 && firstChild.children[0].type === 'text' && !firstChild.children[0].value.trim()) {
+                                firstChild.children.shift();
+                        }
+
+                        // 4. Build the Display Title Array
+                        const typeName = defaults[calloutType] || calloutType.charAt(0).toUpperCase() + calloutType.slice(1);
+                        let displayTitlePrefix = `${typeName}${numberStr}`;
+
+                        let titleInnerChildren: any[] = [{ type: 'text', value: displayTitlePrefix }];
+
+                        // Check if there's an actual user title
+                        const hasUserTitle = titleNodes.length > 0 && !(titleNodes.length === 1 && titleNodes[0].type === 'text' && !titleNodes[0].value.trim());
+
+                        if (hasUserTitle) {
+                            titleInnerChildren.push({ type: 'text', value: ' (' });
+                            titleInnerChildren.push(...titleNodes); // Inject the math nodes!
+                            titleInnerChildren.push({ type: 'text', value: ')' });
+                        }
+
+                        // 5. Transform the HTML structure
                         node.tagName = 'div';
-                        node.properties = {
-                            className: ['callout'],
-                            'data-callout': calloutType
-                        };
+                        node.properties = { className: ['callout'], 'data-callout': calloutType };
 
                         const titleNode = {
                             type: 'element',
@@ -171,7 +211,7 @@ const rehypeObsidianCallouts = () => {
                                     type: 'element',
                                     tagName: 'div',
                                     properties: { className: ['callout-title-inner'] },
-                                    children: [{ type: 'text', value: displayTitle }]
+                                    children: titleInnerChildren // Pass the structured nodes directly
                                 }
                             ]
                         };
@@ -244,7 +284,7 @@ export async function renderMarkdownContent(markdownContent: string) {
     var processedContent = markdownContent
         .replace(/\u00a0/g, ' ')
         .replace(/^\|[ \t]*:?-+:?[ \t]*(?=\|)/gm, (match) => match.replace(/[ \t]/g, ''))
-        .replace(/\$\$(.+?)\$\$/g, (match, equation) => `\n$$\n${equation.trim()}\n$$\n`)
+        .replace(/^([ \t]*(?:>[ \t]*)*)\$\$(.+?)\$\$[ \t]*$/gm, (match, prefix, equation) => `${prefix}$$\n${prefix}${equation.trim()}\n${prefix}$$`)
         .replace(/\\begin\{align\}([\s\S]*?)\\end\{align\}/g, '\\begin{align*}$1\\end{align*}')
         .replace(/(^|\n)(?![ \t]*>)([^\n]+)\r?\n([ \t]*>)/g, '$1$2\n\n$3')
         .replace(/^[ \t]+(>)/gm, '$1')
@@ -305,7 +345,7 @@ export async function renderMarkdownContent(markdownContent: string) {
             baseFile = baseFile.split(/[/\\]/).pop() || '';
 
             // 3. Build the HTML link
-            const fullPath = (!baseFile) ? '' : (slugMap[baseFile] || `/notes/${baseFile}`);
+            const fullPath = (!baseFile) ? '' : (slugMap[baseFile] || `/${baseFile}`);
             const linkHtml = `<a href="${fullPath}${hash}">${title}</a>`;
 
             // 4. Save to memory and return the alphanumeric placeholder
@@ -337,6 +377,7 @@ export async function renderMarkdownContent(markdownContent: string) {
             .use(remarkMath)
             .use(remarkRehype, { allowDangerousHtml: true })
             .use(rehypeRaw)
+            .use(rehypeHighlight)
             .use(rehypeObsidianCallouts)
             .use(rehypeSlug)
             .use(rehypeKatex, {

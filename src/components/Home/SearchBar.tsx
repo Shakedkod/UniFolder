@@ -3,7 +3,7 @@
 import { Search as SearchIcon, Command } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export default function SearchBar()
+export default function SearchBar({ size }: { size?: number })
 {
     const [isMac, setIsMac] = useState(false);
 
@@ -31,11 +31,11 @@ export default function SearchBar()
             className="group relative w-full max-w-2xl mx-auto cursor-pointer"
         >
             <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-gray-500 group-hover:text-orange-400 transition-colors" />
+                <SearchIcon className="h-5 w-5 text-gray-500 group-hover:text-highlight-icon transition-colors" />
             </div>
             
-            <div className="w-full bg-white/5 border border-white/10 hover:border-orange-500/50 hover:bg-white/10 text-gray-400 py-4 pr-12 pl-4 rounded-2xl transition-all flex items-center justify-between shadow-2xl">
-                <span className="text-lg font-light">חיפוש בתיקיה...</span>
+            <div className="w-full bg-white/5 border border-white/10 hover:border-highlight/50 hover:bg-white/10 text-gray-400 py-4 pr-12 pl-4 rounded-2xl transition-all flex items-center justify-between shadow-2xl">
+                <span className={`${size === 1 ? "text-sm" : size === 2 ? "text-base" : "text-lg"} font-light`}>חיפוש בתיקיה</span>
                 
                 <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-white/5 border border-white/10 rounded-md text-xs font-mono opacity-60 transition-opacity group-hover:opacity-100">
                     {isMac ? (

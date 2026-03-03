@@ -19,8 +19,8 @@
 
 # production
 /build
-/vault
-/vault/*
+/public/vault
+/public/vault/*
 /public/vault-images
 /public/vault-images/*
 

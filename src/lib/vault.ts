@@ -21,7 +21,7 @@ const FOLDER_DICTIONARY: Record<string, string> = {
     'dorms': 'מעונות'
 };
 
-const VAULT_DIRECTORY = path.join(process.cwd(), 'vault');
+const VAULT_DIRECTORY = path.join(process.cwd(), 'public', 'vault');
 
 export function isVaultDirectory(slug: string[]): boolean {
     const fullPath = path.join(VAULT_DIRECTORY, ...slug);
@@ -75,6 +75,7 @@ export function getFolderContents(slug: string[]) {
                     const filePath = path.join(fullPath, item.name);
                     const fileContents = fs.readFileSync(filePath, 'utf8');
                     const { data } = matter(fileContents);
+                    console.log(`Loaded frontmatter for ${item.name}:`, data);
                     
                     if (data.title) {
                         displayName = data.title;
@@ -89,7 +90,7 @@ export function getFolderContents(slug: string[]) {
                 displayName: displayName,
                 isDirectory: isDir,
                 // Build the URL path for the Next.js Link component
-                href: `/notes/${slug.join('/')}/${cleanName}`
+                href: `/${slug.join('/')}/${cleanName}`
             };
         })
         // Sort folders first, then files alphabetically
@@ -142,20 +143,25 @@ export function getAllNoteSlugs() {
 }
 
 export function getNoteContent(slugArray: string[]) {
-    // Reconstruct the file path
-    const relativePath = `${slugArray.join('/')}.md`;
-    const fullPath = path.join(VAULT_DIRECTORY, relativePath);
-
-    if (!fs.existsSync(fullPath)) {
-        return null;
+    const filePath = path.join(VAULT_DIRECTORY, ...slugArray);
+    
+    // 1. Try reading the exact file first (e.g., "hw1.c" or "script.py")
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        return fs.readFileSync(filePath, 'utf8');
     }
 
-    return fs.readFileSync(fullPath, 'utf8');
+    // 2. If no exact match, try adding .md (for Obsidian links that drop the extension)
+    const mdPath = `${filePath}.md`;
+    if (fs.existsSync(mdPath)) {
+        return fs.readFileSync(mdPath, 'utf8');
+    }
+
+    return null;
 }
 
 let dynamicFolderMap: Record<string, string> = {};
 
-export function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/notes'): TreeItem[] {
+export function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/'): TreeItem[] {
     if (!fs.existsSync(dir)) return [];
 
     // --- NEW: Load the auto-generated folder map ---

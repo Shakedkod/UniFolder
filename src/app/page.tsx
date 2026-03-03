@@ -1,13 +1,11 @@
-import { TopBar, Hero, SearchBar, Folders, Footer } from "@/components/Home";
+import { Hero, SearchBar, Footer } from "@/components/Home";
 
 export default async function Home() {
 
     return (
-        <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-            <TopBar />
+        <main className="w-full min-h-screen flex flex-col items-center justify-start gap-10 bg-accent-background text-foreground">
             <Hero />
             <SearchBar />
-            <Folders />
             <Footer />
         </main>
     );

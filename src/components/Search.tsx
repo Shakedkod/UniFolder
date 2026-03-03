@@ -9,11 +9,11 @@ import { Folder, GraduationCap, Group, Pencil, FileText } from 'lucide-react';
 
 const getResultIcon = (res: any) => {
     if (res.isLecture) {
-        return (<GraduationCap className="w-4 h-4 text-orange-400" />);
+        return (<GraduationCap className="w-4 h-4 text-highlight" />);
     }
     if (res.isTutorial) {
         // Users/Group for Tutorials
-        return (<Group className="w-4 h-4 text-cyan-400" />);
+        return (<Group className="w-4 h-4 text-highlight" />);
     }
     if (res.isHomework) {
         // Pencil for Homework
@@ -31,7 +31,7 @@ function RenderMD({ content }: { content: string }) {
                 // 1. Flatten text blocks
                 p: ({ node, ...props }) => <span {...props} />,
                 blockquote: ({ node, ...props }) => (
-                    <span className="border-r-2 border-orange-500/50 pr-2 mr-1 text-gray-400 italic" {...props} />
+                    <span className="border-r-2 border-highlight/50 pr-2 mr-1 text-gray-400 italic" {...props} />
                 ),
 
                 // 2. Flatten lists into a single line separated by commas
@@ -242,23 +242,23 @@ export default function Search() {
     return (
         // The overlay backdrop: clicking it closes the modal
         <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh]"
+            className="fixed inset-0 bg-background/60 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh]"
             onClick={() => setIsOpen(false)}
         >
             {/* The modal container: stopPropagation prevents clicks inside from closing it */}
             <div
-                className="bg-[#171717] border border-gray-700/60 w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col"
+                className="bg-button-bg border border-button-border-light/60 w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Search Input Header */}
-                <div className="flex items-center px-4 border-b border-gray-800/60" dir="rtl">
+                <div className="flex items-center px-4 border-b border-button-border/60" dir="rtl">
                     <svg className="w-5 h-5 text-gray-400 ml-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <input
                         ref={inputRef}
-                        className="w-full bg-transparent text-gray-100 placeholder-gray-500 py-4 outline-none text-lg"
-                        placeholder="חיפוש בתיקיה..."
+                        className="w-full bg-transparent text-foreground placeholder-gray-500 py-4 outline-none text-lg"
+                        placeholder="חפשו!"
                         value={query}
                         onChange={(e) => handleSearch(e.target.value)}
                         onKeyDown={handleInputKeyDown}
@@ -271,7 +271,7 @@ export default function Search() {
                         </span>
                     )}
 
-                    <kbd className="hidden sm:inline-block bg-gray-800 text-gray-400 text-xs px-2 py-1 rounded border border-gray-700 font-mono">
+                    <kbd className="hidden sm:inline-block bg-button-border text-foreground text-xs px-2 py-1 rounded border border-button-border-light font-mono">
                         ESC
                     </kbd>
                 </div>
@@ -320,11 +320,11 @@ export default function Search() {
                                     onClick={() => { router.push(res.path); setIsOpen(false); }}
                                     onMouseEnter={() => setSelectedIndex(index)}
                                     className={`p-3 rounded-lg cursor-pointer transition-colors group flex flex-col gap-1 border-r-4 ${isActive
-                                        ? 'bg-white/10 border-orange-400'
+                                        ? 'bg-background/10 border-highlight-icon'
                                         : 'hover:bg-white/5 border-transparent'
                                         }`}
                                 >
-                                    <div className="text-orange-400 font-medium flex items-center gap-2">
+                                    <div className="text-foreground-heading-2 font-medium flex items-center gap-2">
                                         {/* Dynamic Icon */}
                                         <div className={isActive ? 'opacity-100' : 'opacity-40 group-hover:opacity-100'}>
                                             {getResultIcon(res)}

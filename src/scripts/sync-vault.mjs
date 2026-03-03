@@ -4,15 +4,15 @@ import { execSync } from 'child_process';
 import matter from 'gray-matter';
 import GithubSlugger from 'github-slugger';
 
-// 1. CLOUD CONFIGURATION
+// CLOUD CONFIGURATION
 const GITHUB_PAT = process.env.GITHUB_PAT;
 const VAULT_REPO = 'github.com/ShakedKod/ShakedKodPrivate.git';
 
 const TEMP_DIR = path.join(process.cwd(), 'temp_vault');
-const DEST_VAULT = path.join(process.cwd(), 'vault');
+const DEST_VAULT = path.join(process.cwd(), 'public', 'vault');
 const PUBLIC_IMAGES_DIR = path.join(process.cwd(), 'public', 'vault-images');
 
-// 2. THE DICTIONARY (Only for permanent structural folders!)
+// THE DICTIONARY (Only for permanent structural folders!)
 const DICTIONARY = {
     'תואר ראשון במדעי המחשב': 'bsc-cs',
     'סמסטר א': 'semester-a',
@@ -22,13 +22,20 @@ const DICTIONARY = {
     'מעונות': 'dorms'
 };
 
-// --- NEW: Hebrew to English Transliteration Fallback ---
+// ---  Hebrew to English Transliteration Fallback ---
 const HEBREW_MAP = {
     'א': 'a', 'ב': 'b', 'ג': 'g', 'ד': 'd', 'ה': 'h', 'ו': 'v', 'ז': 'z', 'ח': 'ch',
     'ט': 't', 'י': 'y', 'כ': 'k', 'ך': 'k', 'ל': 'l', 'מ': 'm', 'ם': 'm', 'נ': 'n',
     'ן': 'n', 'ס': 's', 'ע': 'a', 'פ': 'p', 'ף': 'p', 'צ': 'tz', 'ץ': 'tz', 'ק': 'k',
     'ר': 'r', 'ש': 'sh', 'ת': 't'
 };
+
+// The expanded list of academic and code extensions
+const allowedExtensions = [
+    '.md', '.c', '.h', '.cpp', '.hpp',
+    '.java', '.py', '.js', '.ts',
+    '.sh', '.sql', '.json', '.yaml', '.yml'
+];
 
 function transliterate(str)
 {
@@ -74,7 +81,7 @@ const FOLDER_DICTIONARY = {
 
 var dynamicFolderMap = {};
 
-function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/notes')
+function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '')
 {
     if (!fs.existsSync(dir)) return [];
 
@@ -127,18 +134,32 @@ function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/notes')
                     children: children
                 });
             }
-        } else if (entry.name.endsWith('.md'))
+        } else if (allowedExtensions.includes(path.extname(entry.name).toLowerCase()))
         {
             const content = fs.readFileSync(fullPath, 'utf8');
-            const { data } = matter(content);
 
-            tree.push({
-                name: slug,
-                title: data.title || slug,
-                path: itemPath,
-                fullPath: fullPath,
-                isDirectory: false
-            });
+            if (path.extname(entry.name).toLowerCase() === '.md')
+            {
+                const { data } = matter(content);
+
+                tree.push({
+                    name: slug,
+                    title: data.title || slug,
+                    path: itemPath,
+                    fullPath: fullPath,
+                    isDirectory: false
+                });
+            }
+            else
+            {
+                tree.push({
+                    name: slug,
+                    title: slug.replace(/-/g, ' '),
+                    path: itemPath,
+                    fullPath: fullPath,
+                    isDirectory: false
+                });
+            }
         }
     }
 
@@ -156,7 +177,8 @@ function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/notes')
     });
 }
 
-function cleanMarkdown(text) {
+function cleanMarkdown(text)
+{
     return text
         .replace(/!\[\[.*?\]\]/g, '')         // Remove image embeds
         .replace(/\[\[(.*?)\]\]/g, '$1')      // Simplify internal links
@@ -189,27 +211,40 @@ function generateSearchIndex(vaultTree)
                     priority: 1 // We'll use this for sorting later
                 });
 
-                const sections = content.split(/(?=^#{1,6} )/gm);
-                const slugger = new GithubSlugger();
-
-                sections.forEach((section, i) =>
+                if (path.extname(item.fullPath).toLowerCase() === '.md')
                 {
-                    const lines = section.trim().split('\n');
-                    const header = lines[0].replace(/^#+ /, '').trim();
-                    if (!header || header === '---') return;
-                    const cleanHeaderForSlug = header.replace(/\$/g, '');
+                    const sections = content.split(/(?=^#{1,6} )/gm);
+                    const slugger = new GithubSlugger();
 
-                    // Grab ALL the text in this section, not just the first 3 lines
-                    const fullBodyText = lines.slice(1).join(' ').trim();
+                    sections.forEach((section, i) =>
+                    {
+                        const lines = section.trim().split('\n');
+                        const header = lines[0].replace(/^#+ /, '').trim();
+                        if (!header || header === '---') return;
+                        const cleanHeaderForSlug = header.replace(/\$/g, '');
 
-                    index.push({
-                        title: `${item.title} > ${header}`,
-                        path: `${item.path}#${slugger.slug(cleanHeaderForSlug)}`,
-                        content: cleanMarkdown(fullBodyText), // The search engine will read this
-                        excerpt: cleanMarkdown(fullBodyText.substring(0, 150) + "..."), // Fallback for the UI
-                        priority: 2
+                        // Grab ALL the text in this section, not just the first 3 lines
+                        const fullBodyText = lines.slice(1).join(' ').trim();
+
+                        index.push({
+                            title: `${item.title} > ${header}`,
+                            path: `${item.path}#${slugger.slug(cleanHeaderForSlug)}`,
+                            content: cleanMarkdown(fullBodyText), // The search engine will read this
+                            excerpt: cleanMarkdown(fullBodyText.substring(0, 150) + "..."), // Fallback for the UI
+                            priority: 2
+                        });
                     });
-                });
+                }
+                else
+                {
+                    index.push({
+                        title: item.title,
+                        path: item.path,
+                        content: content,
+                        excerpt: content.substring(0, 150) + "...",
+                        priority: 1
+                    });
+                }
             }
         }
     }
@@ -230,7 +265,7 @@ function syncVault(srcDir, destDir)
         if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
 
         const srcPath = path.join(srcDir, entry.name);
-        const ext = path.extname(entry.name);
+        const ext = path.extname(entry.name).toLocaleLowerCase();
         const originalName = path.basename(entry.name, ext);
         const englishName = getSlugName(originalName);
         const destPath = path.join(destDir, englishName + ext);
@@ -259,6 +294,10 @@ function syncVault(srcDir, destDir)
             }
 
             fs.writeFileSync(destPath, content, 'utf8');
+        }
+        else if (allowedExtensions.includes(ext))
+        {
+            fs.copyFileSync(srcPath, destPath);
         }
     }
 }

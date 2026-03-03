@@ -42,3 +42,14 @@
     scrollbar-width: none !important;
     /* Firefox */
 }
+
+/* Hide the main browser window scrollbar */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    display: none !important;
+}
+
+html, body {
+    -ms-overflow-style: none !important; /* IE and Edge */
+    scrollbar-width: none !important;    /* Firefox */
+}

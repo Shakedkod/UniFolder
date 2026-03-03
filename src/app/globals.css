@@ -7,23 +7,166 @@ html {
   scroll-padding-top: 100px; /* Adjust this based on your top-bar height */
 }
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
+@theme {
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-accent-background: var(--accent-background);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-foreground-hover: var(--accent-foreground-hover);
+  --color-really-light-accent-border: var(--really-light-accent-border);
+  --color-accent2-background: var(--accent2-background);
+  --color-accent2-border: var(--accent2-border);
+  --color-accent2-foreground: var(--accent2-foreground);
+  --color-really-light-text: var(--really-light-text);
+  --color-really-light-accent-bg: var(--really-light-accent-bg);
+
+  --color-foreground-title: var(--foreground-title);
+  --color-footer-title: var(--footer-title);
+  --color-foreground-heading-sidebar-1: var(--foreground-heading-sidebar-1);
+  --color-foreground-heading-sidebar-2: var(--foreground-heading-sidebar-2);
+  --color-foreground-heading-sidebar-3: var(--foreground-heading-sidebar-3);
+  --color-foreground-heading-sidebar-4: var(--foreground-heading-sidebar-4);
+  --color-foreground-heading-sidebar-5: var(--foreground-heading-sidebar-5);
+  --color-foreground-heading-sidebar-6: var(--foreground-heading-sidebar-6);
+
+  --color-foreground-heading-1: var(--foreground-heading-1);
+  --color-foreground-heading-2: var(--foreground-heading-2);
+  --color-foreground-heading-3: var(--foreground-heading-3);
+  --color-foreground-heading-4: var(--foreground-heading-4);
+  --color-foreground-heading-5: var(--foreground-heading-5);
+  --color-foreground-heading-6: var(--foreground-heading-6);
+
+  --color-highlight: var(--highlight);
+  --color-highlight-icon: var(--highlight-icon);
+
+  --color-button-bg: var(--button-bg);
+  --color-button-border-light: var(--button-border-light);
+  --color-button-border: var(--button-border);
+  --color-button-hover-bg: var(--button-hover-bg);
+  --color-button-foreground: var(--button-foreground);
+
+  --color-hero-background: var(--hero-background);
+  --color-hero-section-background: var(--hero-section-background);
+  --color-hero-primary-main: var(--hero-primary-main);
+  --color-hero-primary-hover: var(--hero-primary-hover);
+  --color-hero-primary-light: var(--hero-primary-light);
+  --color-hero-primary-border: var(--hero-primary-border);
+  --color-hero-accent-main: var(--hero-accent-main);
+  --color-hero-accent-hover: var(--hero-accent-hover);
+  --color-hero-accent-light: var(--hero-accent-light);
+  --color-hero-heading: var(--hero-heading);
+  --color-hero-body: var(--hero-body);
+  --color-hero-ui: var(--hero-ui);
+  --color-hero-muted: var(--hero-muted);
+  --color-hero-border-subtle: var(--hero-border-subtle);
+  --color-hero-grid-pattern: var(--hero-grid-pattern);
+  --color-table-background: var(--table-background);
+  --color-table-border: var(--table-border);
+  --color-table-header-bg: var(--table-header-bg);
+  --color-table-header-text: var(--table-header-text);
+  --color-table-header-border: var(--table-header-border);
+  --color-table-row-even-bg: var(--table-row-even-bg);
+  --color-table-row-hover-bg: var(--table-row-hover-bg);
+  --color-table-cell-border: var(--table-cell-border);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root
+{
+  --background: #ffffff;
+  --accent-background: #f3f3f3;
+  --accent2-background: #263853;
+  --accent2-border: #cbd5e1;
+  --foreground: #000000;
+  --foreground-remark: #9ca3af;
+  --accent-foreground: #ff6900;
+  --accent-foreground-hover: #ff8903;
+  --really-light-accent-bg: #fff7ed;
+  --really-light-accent-border: #ffedd4;
+  --really-light-text: #62748e;
+  --accent2-foreground: #ebf2ff;
+
+  --foreground-title: #03a3ff; 
+  --footer-title: #155dfc;
+  --foreground-heading-sidebar-1: #f8fafc; 
+  --foreground-heading-sidebar-2: #e2e8f0; 
+  --foreground-heading-sidebar-3: #cbd5e1; 
+  --foreground-heading-sidebar-4: #94a3b8; 
+  --foreground-heading-sidebar-5: #64748b; 
+  --foreground-heading-sidebar-6: #475569;
+
+  --foreground-heading-1: #0f172a;
+  --foreground-heading-2: #1e3a8a;
+  --foreground-heading-3: #1e40af; 
+  --foreground-heading-4: #1d4ed8; 
+  --foreground-heading-5: #2563eb; 
+  --foreground-heading-6: #64748b;
+
+  --highlight: #0084ff;
+  --highlight-icon: #03afff;
+
+  --button-bg: #f8fafc;
+  --button-border-light: #e2e8f0;
+  --button-border: #cbd5e1;
+  --button-hover-bg: #e2e8f0;
+  --button-foreground: #1e2939;
+
+  --hero-background: #f8fafc;
+  --hero-section-background: #f1f5f9;
+
+  --hero-primary-main: #2563eb;
+  --hero-primary-hover: #1d4ed8;
+  --hero-primary-light: #eff6ff;
+  --hero-primary-border: #bfdbfe;
+
+  --hero-accent-main: #f97316;
+  --hero-accent-hover: #fb923c;
+  --hero-accent-light: #fff7ed;
+
+  --hero-heading: #0f172a;
+  --hero-body: #475569;
+  --hero-ui: #334155;
+  --hero-muted: #94a3b8;
+
+  --hero-border-subtle: #e2e8f0;
+  --hero-grid-pattern: #cbd5e1;
+
+  --table-background: #f8fafc;
+  --table-border: #cbd5e1;
+  --table-header-bg: #f1f5f9;
+  --table-header-text: #000000;
+  --table-header-border: #cbd5e1;
+  --table-row-even-bg: #f5faff;
+  --table-row-hover-bg: #e2e8f0;
+  --table-cell-border: #cbd5e1;
+}
+
+.orange
+{
+  --accent-background: #000011;
+  --foreground-title: #ff8903;
+  --foreground-heading-1: #FF8C00;
+  --foreground-heading-2: #E67600;
+  --foreground-heading-3: #CD6000; 
+  --foreground-heading-4: #B34A00; 
+  --foreground-heading-5: #9A3400; 
+  --foreground-heading-6: #a1352d;
+  --highlight: #ff6900;
+  --highlight-icon: #ff8903;
+
+  --button-bg: #171717;
+  --button-border-light: #364153;
+  --button-border: #1e2939;
+  --button-hover-bg: #fff;
+  --button-foreground: #e5e7eb;
+
+  --table-background: #171717;
+  --table-border: #374151;
+  --table-header-bg: #fb923c1a;
+  --table-header-text: #fb923c;
+  --table-header-border: #374151;
+  --table-row-even-bg: rgba(255, 255, 255, 0.03);
+  --table-row-hover-bg: rgba(251, 146, 60, 0.05);
+  --table-cell-border: #1f2937;
 }
 
 @media print {
@@ -40,8 +183,8 @@ html {
     left: 0;
     width: 100%;
     height: 100%;
-    background: white;
-    color: black;
+    background: var(--background);
+    color: var(--foreground);
     text-align: center;
     padding-top: 50px;
   }

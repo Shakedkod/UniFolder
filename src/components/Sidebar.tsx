@@ -7,6 +7,8 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { SearchBar } from "./Home";
+import BackButton from "./NoteComponents/BackButton";
 // import { ArrowLeft, ArrowRight, ArrowUp } from "lucide-react"; // Bring back if you use them
 
 interface NavigatorContent {
@@ -17,6 +19,15 @@ interface NavigatorContent {
         name: string;
     };
 }
+
+const levelStyles: Record<number, string> = {
+    1: "text-[15px] font-bold text-foreground-heading-sidebar-1 mb-2 mt-4 first:mt-0 tracking-wide",
+    2: "text-[14px] font-semibold text-foreground-heading-sidebar-2 mb-1.5",
+    3: "text-[13px] font-medium text-foreground-heading-sidebar-3 mb-1",
+    4: "text-[12px] font-medium text-foreground-heading-sidebar-4 border-r-2 pr-2",
+    5: "text-[12px] font-normal text-foreground-heading-sidebar-5 border-r-2 pr-3",
+    6: "text-[12px] font-normal text-foreground-heading-sidebar-6 border-r-2 pr-4"
+};
 
 export default function Sidebar({ content }: { content: NavigatorContent }) {
     // Tracks the exact ID of whatever is currently on screen
@@ -53,42 +64,27 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
         (item) => item.id === activeId || item.callouts.some((c) => c.id === activeId)
     )?.id || activeId;
 
-    return (
+    return (<>
+        {/* ---------------------- DESKTOP SIDEBAR ---------------------- */}
         <div
-            /* The long classes at the end hide the scrollbar natively across Chrome/Firefox/Safari */
-            className="w-auto h-auto p-4 lg:p-10 flex flex-col justify-start items-start sticky top-0 max-h-screen overflow-y-auto no-scrollbar"
+            className="hidden xl:flex min-w-sm h-screen p-4 lg:p-10 flex-col justify-start items-start sticky top-0 max-h-screen overflow-y-auto no-scrollbar bg-accent2-background border-l border-accent2-border shadow-lg"
             dir="rtl"
         >
             {/* BACK BUTTON FOR FILES */}
-            <div className=" pb-4">
-                <Link
-                    href={content.parent.url}
-                    className="inline-flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors text-sm font-medium"
-                >
-                    <ArrowRight size={16} />
-                    <span>חזור לתיקייה: {content.parent.name}</span>
-                </Link>
-            </div>
+            <BackButton url={content.parent.url} name={content.parent.name} />
+
+            {/* NOTE TITLE */}
             <a href="#" className="w-full">
-                <h1 className="hidden lg:flex flex-col text-3xl font-bold text-[#F0F0F3] mb-4">
+                <h1 className="hidden lg:flex flex-col text-3xl font-bold text-accent2-foreground mb-4">
                     {content.title}
                 </h1>
             </a>
-            <div className="w-full mb-6 border-b border-gray-800"></div>
+            <SearchBar size={1} />
 
-            <div className="w-full">
+            <div className="w-full mt-5">
                 <ul className="flex flex-col space-y-2">
                     {content.toc?.map((item: TocItem) => {
                         const isSectionActive = activeHeadingId === item.id;
-
-                        const levelStyles = {
-                            1: "text-[15px] font-bold text-[#E9E9E9] mb-2 mt-4 first:mt-0 tracking-wide",
-                            2: "text-[14px] font-semibold text-[#DDDDDD] mb-1.5",
-                            3: "text-[13px] font-medium text-[#DADADA] mb-1",
-                            4: "text-[12px] font-medium text-[#C9C9C9] border-r-2 border-[#B34A00]/30 pr-2",
-                            5: "text-[12px] font-normal text-[#9E9E9E] border-r-2 border-[#9A3400]/30 pr-3",
-                            6: "text-[12px] font-normal text-[#757575] border-r-2 border-[#801E00]/30 pr-4"
-                        }[item.level as 1 | 2 | 3 | 4 | 5 | 6] || "text-sm";
 
                         return (
                             <li key={item.id} className="my-1 flex flex-col" style={{ paddingRight: `${(item.level - 1) * 1.25}rem` }}>
@@ -97,8 +93,8 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
                                     href={`#${item.slug}`}
                                     className={`transition-all duration-200 block py-1 border-r-2 ${isSectionActive
                                         ? "text-orange-500 bg-orange-500/10 font-bold"
-                                        : "border-transparent hover:text-white hover:border-gray-600 px-2"
-                                        } ${levelStyles}`}
+                                        : "border-transparent hover:text-accent2-foreground hover:border-gray-600 px-2"
+                                        } ${levelStyles[item.level] || "text-sm"}`}
                                 >
                                     <ReactMarkdown
                                         remarkPlugins={[remarkMath]}
@@ -120,7 +116,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
                                             <li key={callout.id}>
                                                 <a
                                                     href={`#${callout.id}`}
-                                                    className={`text-sm transition-colors block truncate ${activeId === callout.id ? "text-orange-400 font-bold" : "text-gray-400 hover:text-gray-200"
+                                                    className={`text-sm transition-colors block truncate ${activeId === callout.id ? "text-orange-400 font-bold" : "text-foreground hover:text-accent2-foreground"
                                                         }`}
                                                     title={callout.title}
                                                 >
@@ -137,5 +133,11 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
                 <div className="w-full h-[1px] bg-gray-500 my-4" />
             </div>
         </div>
-    );
+
+        {/* ---------------------- TABLET TOPBAR ---------------------- */}
+        <div className="hidden sm:flex xl:hidden w-full h-16 bg-[#000000] border-b border-gray-800/50 shadow-lg items-center justify-start px-4" dir="rtl">
+
+        </div>
+        {/* ---------------------- PHONE MENU ---------------------- */}
+    </>);
 }

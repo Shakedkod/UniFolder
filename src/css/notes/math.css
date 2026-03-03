@@ -3,6 +3,7 @@
     direction: ltr;
     unicode-bidi: isolate;
     text-align: left;
+    color: inherit;
 }
 
 .katex-display {
@@ -66,8 +67,7 @@
 
 /* --- Academic Formula Sheet Styling --- */
 .academic-preview {
-    color: #d1d5db;
-    /* text-gray-300 */
+    color: var(--foreground);
 }
 
 .math-cancel {
@@ -100,7 +100,7 @@
 /* --- Halmos --- */
 .academic-preview .halmos {
     float: left;
-    color: white;
+    color: var(--foreground);
     font-size: 1.2em;
     line-height: 1;
     margin-top: 0.1rem;
