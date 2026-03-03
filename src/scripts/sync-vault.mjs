@@ -16,7 +16,9 @@ const PUBLIC_IMAGES_DIR = path.join(process.cwd(), 'public', 'vault-images');
 const DICTIONARY = {
     'תואר ראשון במדעי המחשב': 'bsc-cs',
     'סמסטר א': 'semester-a',
-    'סמסטר א\'': 'semester-a', // Matches the apostrophe
+    'סמסטר א\'': 'semester-a',
+    'סמסטר ב': 'semester-b',
+    'סמסטר ב\'': 'semester-b',
     'שיעורי בית': 'hw',
     'תרגול': 'tutorials',
     'מעונות': 'dorms'
@@ -69,14 +71,11 @@ function getSlugName(name)
 }
 
 const FOLDER_DICTIONARY = {
-    'university': 'אוניברסיטה',
-    'physics': 'פיזיקה',
-    'math': 'מתמטיקה',
     'semester-a': "סמסטר א'",
+    'semester-b': "סמסטר ב'",
     'bsc-cs': 'תואר ראשון במדעי המחשב',
     'hw': 'שיעורי בית',
     'tutorials': 'תרגול',
-    'dorms': 'מעונות'
 };
 
 var dynamicFolderMap = {};
