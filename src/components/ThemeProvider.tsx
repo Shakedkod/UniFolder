@@ -95,6 +95,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useTheme() {
     const context = useContext(ThemeContext);
-    if (context === undefined) throw new Error("useTheme must be used within a ThemeProvider");
+    
+    // Instead of throwing an error, gracefully return a default state 
+    // to survive Next.js SSR and prerendering passes.
+    if (context === undefined) {
+        return {
+            preference: "system" as ThemePreference,
+            setPreference: () => {},
+            systemLight: "light" as Theme,
+            setSystemLight: () => {},
+            systemDark: "theme-night" as Theme,
+            setSystemDark: () => {},
+            activeTheme: "light" as Theme
+        };
+    }
     return context;
 }

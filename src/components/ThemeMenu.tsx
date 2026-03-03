@@ -56,9 +56,17 @@ export default function ThemeMenu() {
             }`}
         >
             <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full flex overflow-hidden border border-accent2-border shadow-sm ${themeId}`}>
+                {/* CHANGE: Switched border from hardcoded border-accent2-border to 
+                    a generic opacity-based gray (border-foreground/20) for 
+                    better visibility across different theme backgrounds.
+                */}
+                <div className={`w-5 h-5 rounded-full flex overflow-hidden border border-foreground/20 shadow-sm ${themeId}`}>
                     <div className="w-1/2 h-full bg-background" />
-                    <div className="w-1/2 h-full bg-highlight" />
+                    {/* CHANGE: Left is background, right is main foreground text color. 
+                        Using bg-foreground instead of bg-highlight gives a much more
+                        accurate representation of the overall theme feel.
+                    */}
+                    <div className="w-1/2 h-full bg-foreground" />
                 </div>
                 <span className={`text-sm ${active ? "text-highlight font-medium" : "text-really-light-text"}`}>{label}</span>
             </div>
@@ -73,7 +81,9 @@ export default function ThemeMenu() {
             <button 
                 ref={buttonRef}
                 onClick={handleToggleMenu}
-                className={`flex items-center justify-between w-full p-3 rounded-xl border transition-all relative z-60 ${
+                // CHANGE: Increased z-index from 60 to 110 here to match the popup logic
+                // we used to solve mobile drawer clipping issues.
+                className={`flex items-center justify-between w-full p-3 rounded-xl border transition-all relative z-[110] ${
                     isOpen ? "bg-button-bg border-button-border-light text-foreground" : "bg-transparent border-transparent hover:bg-really-light-accent-bg text-really-light-text hover:text-foreground"
                 }`}
             >
@@ -84,9 +94,10 @@ export default function ThemeMenu() {
                 
                 <div className="flex items-center gap-2">
                     {/* Live Preview on the Button */}
-                    <div className={`w-4 h-4 rounded-full flex overflow-hidden border border-accent2-border ${activeTheme || "light"}`}>
+                    {/* CHANGE: Swatch representation updated to background/foreground */}
+                    <div className={`w-4 h-4 rounded-full flex overflow-hidden border border-foreground/20 ${activeTheme || "light"}`}>
                         <div className="w-1/2 h-full bg-background" />
-                        <div className="w-1/2 h-full bg-highlight" />
+                        <div className="w-1/2 h-full bg-foreground" />
                     </div>
                     {/* Dynamic Chevron Arrow */}
                     {openDirection === 'down' ? (
@@ -97,13 +108,22 @@ export default function ThemeMenu() {
                 </div>
             </button>
 
+            {/* CHANGE: Added a transparent "fixed inset-0" overlay backdrop with high z-index (z-[100]).
+                This guarantees the click-outside-to-close logic works instantly, even if the menu 
+                is rendered inside a complex, layered parent component (like a mobile drawer).
+            */}
+            {isOpen && (
+                 <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)} />
+            )}
+
             {/* 2. THE SMART POSITIONED POPUP */}
             {isOpen && (
-                <div className={`absolute right-0 w-full min-w-60 bg-background border border-accent2-border shadow-[0_10px_40px_var(--shadow-color)] rounded-xl p-3 z-70 flex flex-col gap-3 animate-in fade-in duration-200 ${
-                    openDirection === 'up' 
-                        ? 'bottom-[calc(100%+0.5rem)] slide-in-from-bottom-2' 
-                        : 'top-[calc(100%+0.5rem)] slide-in-from-top-2'
-                }`}>
+                <div 
+                    className={`absolute right-0 w-full min-w-60 bg-background border border-accent2-border shadow-[0_10px_40px_var(--shadow-color)] rounded-xl p-3 z-[110] flex flex-col gap-3 animate-in fade-in duration-200 ${
+                        openDirection === 'up' 
+                            ? 'bottom-[calc(100%+0.5rem)] slide-in-from-bottom-2' 
+                            : 'top-[calc(100%+0.5rem)] slide-in-from-top-2'
+                    }`}>
                     
                     {/* Top Switch: System Auto vs Manual */}
                     <button 
