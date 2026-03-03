@@ -198,7 +198,7 @@ export default function Search() {
     return (
         // The overlay backdrop: clicking it closes the modal
         <div
-            className="fixed inset-0 bg-background/60 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh]"
+            className="fixed inset-0 bg-background/60 backdrop-blur-sm z-100 flex items-start justify-center pt-[15vh]"
             onClick={() => setIsOpen(false)}
         >
             {/* The modal container: stopPropagation prevents clicks inside from closing it */}

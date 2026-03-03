@@ -20,8 +20,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "Uni Folder",
-    description: "Displays my uni folder and notes for the public to see.",
+    title: "תיקיית הסיכומים לתואר במדעי המחשב",
+    description: "מאגר סיכומים ורשימות של תואר במדעי המחשב שאני כעת לומד בטכניון.",
+    icons: {
+        icon: "/favicon.ico",
+        apple: "/apple-touch-icon.png",
+    }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
