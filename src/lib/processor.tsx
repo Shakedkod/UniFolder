@@ -391,7 +391,8 @@ export async function renderMarkdownContent(markdownContent: string) {
                     "\\cancel": "\\htmlClass{math-cancel}{#1}",
                     "\\bcancel": "\\htmlClass{math-bcancel}{#1}",
                     "\\xcancel": "\\htmlClass{math-xcancel}{#1}",
-                    "\\cases": "\\begin{cases} #1 \\end{cases}"
+                    "\\cases": "\\begin{cases} #1 \\end{cases}",
+                    "\\uptau": "\\tau",
                 }
             })
             .use(extractTOCPlugin)
