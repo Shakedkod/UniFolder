@@ -2,33 +2,34 @@
 @import "./notes/graphviz.css";
 @import "./notes/tables.css";
 @import "./notes/callout.css";
+@import "./notes/codeblocks.css";
 
 .academic-preview h1 {
-    @apply text-4xl font-bold mt-8 mb-4 pb-2 text-foreground-heading-1 text-center;
+    @apply text-3xl sm:text-4xl font-bold mt-8 mb-4 pb-2 text-foreground-heading-1 text-center;
 }
 
 .academic-preview h2 {
-    @apply text-3xl font-bold mt-6 mb-3 pb-1 text-foreground-heading-2;
+    @apply text-2xl sm:text-3xl font-bold mt-6 mb-3 pb-1 text-foreground-heading-2;
 }
 
 .academic-preview h3 {
-    @apply text-2xl font-bold mt-5 mb-2 text-foreground-heading-3 decoration-gray-600 underline-offset-4;
+    @apply text-xl sm:text-2xl font-bold mt-5 mb-2 text-foreground-heading-3 decoration-gray-600 underline-offset-4;
 }
 
 .academic-preview h4 {
-    @apply text-xl font-semibold mt-4 mb-2 text-foreground-heading-4;
+    @apply text-lg sm:text-xl font-semibold mt-4 mb-2 text-foreground-heading-4;
 }
 
 .academic-preview h5 {
-    @apply text-lg font-semibold mt-3 mb-1 text-foreground-heading-5;
+    @apply text-base sm:text-lg font-semibold mt-3 mb-1 text-foreground-heading-5;
 }
 
 .academic-preview h6 {
-    @apply text-base font-semibold mt-2 mb-1 text-foreground-heading-6;
+    @apply text-sm sm:text-base font-semibold mt-2 mb-1 text-foreground-heading-6;
 }
 
 .academic-preview p {
-    @apply text-sm md:text-base leading-snug my-2 text-foreground;
+    @apply text-xs sm:text-sm md:text-base leading-snug my-2 text-foreground;
 }
 
 .academic-preview ul {
@@ -48,11 +49,11 @@
 }
 
 .academic-preview table {
-    @apply w-full text-sm text-right border-collapse my-5;
+    @apply w-full text-xs sm:text-sm text-right border-collapse my-5;
 }
 
 .academic-preview thead {
-    @apply bg-gray-800/80 border-b-2 border-gray-500;
+    @apply bg-accent2-background border-b-2 border-accent2-border;
 }
 
 .academic-preview td {
@@ -60,7 +61,7 @@
 }
 
 .academic-preview blockquote {
-    @apply border-r-4 border-gray-500 pr-4 my-4 bg-gray-800/40 py-2 rounded-l-md text-foreground;
+    @apply border-r-4 border-gray-500 pr-4 my-4 bg-accent2-background/40 py-2 rounded-l-md text-foreground;
 }
 
 .academic-preview hr {
@@ -68,7 +69,7 @@
 }
 
 .academic-preview pre {
-    @apply p-4 overflow-x-auto text-sm font-mono leading-relaxed rounded-lg border border-gray-700 bg-[#1e1e1e] my-4;
+    @apply p-4 overflow-x-auto text-sm font-mono leading-relaxed rounded-lg border border-accent2-border bg-table-background my-4;
     direction: ltr;
 }
 
@@ -103,6 +104,6 @@ article.academic-preview .obsidian-image {
 
 /* Optional: Slight dark-mode inversion for Excalidraw SVGs 
    (so black hand-drawn lines turn white) */
-.dark .academic-preview img[src*=".excalidraw.svg"] {
+.dark .academic-preview img[src*=".excalidraw.svg"], .deep-ocean .academic-preview img[src*=".excalidraw.svg"], .night .academic-preview img[src*=".excalidraw.svg"] {
     filter: invert(1) hue-rotate(180deg);
 }

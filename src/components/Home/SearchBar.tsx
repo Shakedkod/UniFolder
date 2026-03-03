@@ -48,6 +48,12 @@ export default function SearchBar({ size }: { size?: number })
                     )}
                 </div>
             </div>
+
+            {/* Tooltip: you can search from anywhere by clicking here or pressing Ctrl+K */}
+            <div className="absolute -bottom-10 right-0 bg-hero-section-background border border-hero-border-subtle text-xs text-slate-500 rounded-md px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                לחץ כאן או הקש {isMac ? '⌘ K' : 'Ctrl K'} כדי לחפש בכל התיקיה
+            </div>
+            
         </div>
     );
 }

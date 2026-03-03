@@ -75,7 +75,6 @@ export function getFolderContents(slug: string[]) {
                     const filePath = path.join(fullPath, item.name);
                     const fileContents = fs.readFileSync(filePath, 'utf8');
                     const { data } = matter(fileContents);
-                    console.log(`Loaded frontmatter for ${item.name}:`, data);
                     
                     if (data.title) {
                         displayName = data.title;

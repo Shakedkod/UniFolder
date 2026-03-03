@@ -1,15 +1,13 @@
 "use client";
 
-import { TocItem, CalloutItem } from "@/lib/toc";
+import { TocItem } from "@/lib/toc";
 import { useEffect, useState } from "react";
-import ReactMarkdown from 'react-markdown';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import { ArrowRight, Menu, X } from "lucide-react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { SearchBar } from "./Home";
 import BackButton from "./NoteComponents/BackButton";
-// import { ArrowLeft, ArrowRight, ArrowUp } from "lucide-react"; // Bring back if you use them
+import RenderMD from "./MarkdownRendererForInline";
+import ThemeMenu from "./ThemeMenu";
 
 interface NavigatorContent {
     title: string;
@@ -29,14 +27,23 @@ const levelStyles: Record<number, string> = {
     6: "text-[12px] font-normal text-foreground-heading-sidebar-6 border-r-2 pr-4"
 };
 
+function JustArrowBackButton({ url }: { url: string; }) {
+    return (
+        <Link
+            href={url}
+            className="p-2 text-sm font-medium text-accent2-border hover:text-highlight"
+        >
+            <ArrowRight size={24} />
+        </Link>
+    );
+}
+
 export default function Sidebar({ content }: { content: NavigatorContent }) {
-    // Tracks the exact ID of whatever is currently on screen
     const [activeId, setActiveId] = useState<string>("");
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     useEffect(() => {
         const headingIds = content.toc?.map((item) => item.id) || [];
-        const calloutIds = content.toc?.flatMap(item => item.callouts.map(c => c.id)) || [];
-        const allIds = [...headingIds, ...calloutIds];
 
         const observer = new IntersectionObserver(
             (entries) => {
@@ -50,7 +57,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
             { rootMargin: "-10% 0px -80% 0px" }
         );
 
-        allIds.forEach((id) => {
+        headingIds.forEach((id) => {
             const el = document.getElementById(id);
             if (el) observer.observe(el);
         });
@@ -64,10 +71,38 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
         (item) => item.id === activeId || item.callouts.some((c) => c.id === activeId)
     )?.id || activeId;
 
+    const contentList = (
+        <ul className="flex flex-col space-y-2">
+            {content.toc?.map((item: TocItem) => {
+                const isSectionActive = activeHeadingId === item.id;
+
+                return (
+                    <li key={item.id} className="my-1 flex flex-col" style={{ paddingRight: `${(item.level - 1) * 1.25}rem` }}>
+                        <a
+                            href={`#${item.slug}`}
+                            className={`transition-all duration-200 block py-1 border-r-2 ${isSectionActive
+                                ? "text-orange-500 bg-orange-500/10 font-bold"
+                                : "border-transparent hover:text-accent2-foreground hover:border-gray-600 px-2"
+                                } ${levelStyles[item.level] || "text-sm"}`}
+                        >
+                            <RenderMD content={item.title} />
+                        </a>
+                    </li>
+                );
+            })}
+        </ul>
+    );
+
+    useEffect(() => {
+        if (isMenuOpen) document.body.style.overflow = 'hidden';
+        else document.body.style.overflow = 'auto';
+        return () => { document.body.style.overflow = 'auto'; };
+    }, [isMenuOpen]);
+
     return (<>
         {/* ---------------------- DESKTOP SIDEBAR ---------------------- */}
         <div
-            className="hidden xl:flex min-w-sm h-screen p-4 lg:p-10 flex-col justify-start items-start sticky top-0 max-h-screen overflow-y-auto no-scrollbar bg-accent2-background border-l border-accent2-border shadow-lg"
+            className="hidden xl:flex min-w-sm max-w-md h-screen p-4 lg:p-10 flex-col justify-start items-start sticky top-0 max-h-screen overflow-y-auto no-scrollbar bg-accent2-background border-l border-accent2-border shadow-lg"
             dir="rtl"
         >
             {/* BACK BUTTON FOR FILES */}
@@ -82,62 +117,80 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
             <SearchBar size={1} />
 
             <div className="w-full mt-5">
-                <ul className="flex flex-col space-y-2">
-                    {content.toc?.map((item: TocItem) => {
-                        const isSectionActive = activeHeadingId === item.id;
+                {contentList}
+            </div>
 
-                        return (
-                            <li key={item.id} className="my-1 flex flex-col" style={{ paddingRight: `${(item.level - 1) * 1.25}rem` }}>
-                                {/* 1. The Main Heading Link */}
-                                <a
-                                    href={`#${item.slug}`}
-                                    className={`transition-all duration-200 block py-1 border-r-2 ${isSectionActive
-                                        ? "text-orange-500 bg-orange-500/10 font-bold"
-                                        : "border-transparent hover:text-accent2-foreground hover:border-gray-600 px-2"
-                                        } ${levelStyles[item.level] || "text-sm"}`}
-                                >
-                                    <ReactMarkdown
-                                        remarkPlugins={[remarkMath]}
-                                        rehypePlugins={[rehypeKatex]}
-                                        components={{
-                                            // Prevent ReactMarkdown from wrapping titles in <p> tags
-                                            p: ({ node, ...props }) => <span {...props} />
-                                        }}
-                                    >
-                                        {item.title}
-                                    </ReactMarkdown>
-                                </a>
-
-                                {/* 2. The Collapsible Definitions List */}
-                                {/* Only renders if this section is currently active on screen */}
-                                {isSectionActive && item.callouts && item.callouts.length > 0 && (
-                                    <ul className="flex flex-col mt-2 pr-4 space-y-2 border-r-2 border-gray-700 mr-2">
-                                        {item.callouts.map((callout: CalloutItem) => (
-                                            <li key={callout.id}>
-                                                <a
-                                                    href={`#${callout.id}`}
-                                                    className={`text-sm transition-colors block truncate ${activeId === callout.id ? "text-orange-400 font-bold" : "text-foreground hover:text-accent2-foreground"
-                                                        }`}
-                                                    title={callout.title}
-                                                >
-                                                    {callout.title}
-                                                </a>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </li>
-                        );
-                    })}
-                </ul>
-                <div className="w-full h-[1px] bg-gray-500 my-4" />
+            {/* Theme Selector */}
+            <div className="w-full mt-auto pt-6 border-t border-accent2-border">
+                <ThemeMenu />
             </div>
         </div>
 
         {/* ---------------------- TABLET TOPBAR ---------------------- */}
-        <div className="hidden sm:flex xl:hidden w-full h-16 bg-[#000000] border-b border-gray-800/50 shadow-lg items-center justify-start px-4" dir="rtl">
-
+        <div className="hidden sm:flex xl:hidden w-full h-16 bg-accent2-background border-b border-accent2-border shadow-lg flex-row items-center justify-between px-4 sticky top-0 z-50" dir="rtl">
+            <JustArrowBackButton url={content.parent.url} />
+            <h1 className="text-lg font-bold text-accent2-foreground">
+                {content.title}
+            </h1>
+            <button
+                onClick={() => setIsMenuOpen(true)}
+                className="p-2 text-accent2-foreground hover:bg-white/10 rounded-md transition-colors"
+                aria-label="Open navigation menu"
+            >
+                <Menu size={24} />
+            </button>
         </div>
+
+        {/* MENU FOR TABLETS AND PHONES */}
+        {/* Backdrop */}
+        {isMenuOpen && (
+            <div
+                className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-50 xl:hidden transition-opacity"
+                onClick={() => setIsMenuOpen(false)}
+            />
+        )}
+
+        {/* The Drawer Panel */}
+        <div
+            className={`fixed top-0 right-0 h-full w-72 sm:w-80 bg-accent2-background shadow-2xl z-60 transform transition-transform duration-300 xl:hidden overflow-y-auto no-scrollbar ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+                }`}
+            dir="rtl"
+        >
+            <div className="p-6 flex flex-col h-full">
+                {/* Drawer Header */}
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-accent2-foreground">ניווט</h2>
+                    <button
+                        onClick={() => setIsMenuOpen(false)}
+                        className="hidden sm:flex p-2 text-button-border hover:text-button-hover-bg bg-background/5 hover:bg-background/10 rounded-lg transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                    <div className="sm:hidden">
+                        <JustArrowBackButton url={content.parent.url} />
+                    </div>
+                </div>
+
+                <SearchBar size={1} />
+
+                <div className="w-full mt-6 pb-20">
+                    {contentList}
+                </div>
+                <div className="w-full h-px bg-foreground/10" />
+                <ThemeMenu />
+            </div>
+        </div>
+
         {/* ---------------------- PHONE MENU ---------------------- */}
+        <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="fixed bottom-6 right-6 z-70 w-14 h-14 flex items-center justify-center bg-hero-primary-main hover:bg-hero-primary-hover text-accent2-foreground rounded-full shadow-[0_4px_14px_var(--shadow-color)] transition-all duration-300 sm:hidden"
+            aria-label="Toggle Mobile Menu"
+        >
+            {/* Smooth icon transition rotation */}
+            <div className={`transition-transform duration-300 flex items-center justify-center ${isMenuOpen ? 'rotate-90 scale-110' : 'rotate-0'}`}>
+                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </div>
+        </button>
     </>);
 }

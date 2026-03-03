@@ -4,6 +4,7 @@
     unicode-bidi: isolate;
     text-align: left;
     color: inherit;
+    font-size: inherit;
 }
 
 .katex-display {

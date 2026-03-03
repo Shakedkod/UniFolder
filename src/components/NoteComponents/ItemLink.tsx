@@ -11,7 +11,7 @@ export default function ItemLink({ name, url, isFolder, size }: { name: string; 
             {isFolder ? (
                 <Folder className="text-accent-foreground shrink-0 group-hover:text-accent-foreground-hover" size={size || 24} />
             ) : (
-                <FileText className="text-green-950 shrink-0 group-hover:text-highlight" size={size || 24} />
+                <FileText className="text-accent2-background shrink-0 group-hover:text-highlight" size={size || 24} />
             )}
             <span className={`${size ? `text-${size}px` : 'text-base'} text-button-foreground truncate`}>
                 {name}

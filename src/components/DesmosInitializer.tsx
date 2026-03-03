@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
-import Script from 'next/script'; // <-- Use Next.js native script loader
+import { useEffect, useCallback, useRef } from 'react';
+import Script from 'next/script';
 
 declare global {
     interface Window {
@@ -10,6 +10,21 @@ declare global {
 }
 
 export default function DesmosInitializer() {
+    // Keep track of all active calculators so we can update them if the theme changes
+    const calculatorsRef = useRef<any[]>([]);
+
+    const checkIsDarkTheme = useCallback(() => {
+        if (typeof window === 'undefined') return false;
+        
+        const bodyClass = document.body.className;
+        
+        // Add all your dark-variant theme classes here!
+        const darkThemes = ['dark', 'theme-midnight', 'theme-dracula', 'theme-ocean'];
+        
+        // Returns true if the body has any of the dark themes
+        return darkThemes.some(theme => bodyClass.includes(theme));
+    }, []);
+
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
@@ -17,7 +32,6 @@ export default function DesmosInitializer() {
         const originalLog = console.log;
 
         console.warn = (...args) => {
-            // Surgical strike on Desmos noise
             if (typeof args[0] === 'string' && args[0].toLowerCase().includes('desmos')) return;
             originalWarn(...args);
         };
@@ -27,18 +41,17 @@ export default function DesmosInitializer() {
             originalLog(...args);
         };
 
-        // Cleanup: Restore original loggers if the component unmounts
         return () => {
             console.warn = originalWarn;
             console.log = originalLog;
         };
     }, []);
 
-    // Wrap the initialization logic in a useCallback so it can be safely used in useEffect
     const initDesmos = useCallback(() => {
         if (!window.Desmos) return;
 
-        // Find all our placeholders that haven't been rendered yet
+        // Check the current system/browser theme
+        const isDarkTheme = checkIsDarkTheme();
         const placeholders = document.querySelectorAll('.desmos-placeholder:not(.initialized)');
 
         placeholders.forEach((el) => {
@@ -46,14 +59,17 @@ export default function DesmosInitializer() {
             const eqStr = decodeURIComponent(el.getAttribute('data-equations') || '');
             const configStr = decodeURIComponent(el.getAttribute('data-config') || '');
 
-            // 1. Initialize the Graph
+            // 1. Initialize the Graph dynamically
             const calc = window.Desmos.GraphingCalculator(el, {
                 expressions: false,
                 settingsMenu: false,
                 zoomButtons: false,
                 lockViewport: true,
-                invertedColors: true
+                invertedColors: isDarkTheme // Matches your current theme!
             });
+
+            // Store the calculator instance so we can update it later
+            calculatorsRef.current.push(calc);
 
             // 2. Set Math Bounds (left, right, bottom, top)
             let mathBounds: any = {};
@@ -96,15 +112,32 @@ export default function DesmosInitializer() {
                 calc.setExpression({ id: 'eq' + idx, latex: latex, color: color, lineStyle: style });
             });
         });
-    }, []);
+    }, [checkIsDarkTheme]);
 
-    // Also run on mount in case the script was already loaded on a previous page
+    // Also run on mount in case the script was already loaded
     useEffect(() => {
         initDesmos();
     }, [initDesmos]);
 
+    // --- NEW: Listen for theme changes in real-time ---
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        
+        const handleThemeChange = (e: MediaQueryListEvent) => {
+            const isDarkNow = e.matches;
+            // Instantly flip all active graphs to the new theme
+            calculatorsRef.current.forEach(calc => {
+                if (calc && typeof calc.updateSettings === 'function') {
+                    calc.updateSettings({ invertedColors: isDarkNow });
+                }
+            });
+        };
+
+        mediaQuery.addEventListener('change', handleThemeChange);
+        return () => mediaQuery.removeEventListener('change', handleThemeChange);
+    }, []);
+
     return (
-        // The Next.js Script component automatically handles CORS, caching, and execution safely!
         <Script
             src="/api/desmos-script"
             strategy="afterInteractive"

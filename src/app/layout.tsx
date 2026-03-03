@@ -4,10 +4,10 @@ import Search from "@/components/Search";
 
 import "./globals.css";
 import 'katex/dist/katex.min.css';
-import 'highlight.js/styles/github-dark.css';
 
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -24,15 +24,16 @@ export const metadata: Metadata = {
     description: "Displays my uni folder and notes for the public to see.",
 };
 
-export default function RootLayout({ children }: Readonly<{children: React.ReactNode;}>) 
-{
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
     return (
-        <html lang= "en" >
-            <body className={ `${geistSans.variable} ${geistMono.variable} antialiased` } dir="rtl">
-                <Search />
-                { children }
-                <Analytics />
-                <SpeedInsights />
+        <html lang="en" className="light" suppressContentEditableWarning>
+            <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} dir="rtl">
+                <ThemeProvider>
+                    <Search />
+                    {children}
+                    <Analytics />
+                    <SpeedInsights />
+                </ThemeProvider>
             </body>
         </html>
     );

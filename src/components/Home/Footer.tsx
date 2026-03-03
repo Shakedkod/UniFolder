@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { BookOpen, Github, AlertCircle, Code2 } from 'lucide-react';
+import ThemeMenu from '../ThemeMenu';
 
 export default function Footer() {
     return (
-        <footer className="w-full bg-background border-t border-button-border-light pt-16 pb-8 mt-12" dir="rtl">
+        <footer className="w-full bg-background border-t border-button-border-light pt-16 pb-8" dir="rtl">
             <div className="max-w-5xl mx-auto px-8">
                 
                 {/* Main Footer Grid */}
@@ -34,17 +35,17 @@ export default function Footer() {
                         <ul className="flex flex-col gap-3 text-sm text-really-light-text">
                             <li>
                                 <Link href="/2025" className="hover:text-highlight hover:-translate-x-1 transition-all flex w-fit">
-                                    שנה א׳ - קורסי בסיס
+                                    שנה א׳
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/2026" className="hover:text-highlight hover:-translate-x-1 transition-all flex w-fit">
-                                    שנה ב׳ - ליבת המקצוע
+                                    שנה ב׳
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/2027" className="hover:text-highlight hover:-translate-x-1 transition-all flex w-fit">
-                                    שנה ג׳ - בחירה ופרויקטים
+                                    שנה ג׳
                                 </Link>
                             </li>
                         </ul>
@@ -70,6 +71,7 @@ export default function Footer() {
                                 <Code2 size={18} />
                             </div>
                         </div>
+                        <ThemeMenu />
                     </div>
                 </div>
 

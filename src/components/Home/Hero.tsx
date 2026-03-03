@@ -73,14 +73,14 @@ export default function Hero() {
                     <div
                         // stopPropagation prevents clicks inside the box from closing it
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
+                        className="bg-background rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
                     >
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
-                            <h3 className="font-semibold text-slate-800 text-lg">בחר תיקייה לניווט</h3>
+                        <div className="flex items-center justify-between p-4 border-b border-hero-section-background bg-hero-background/50">
+                            <h3 className="font-semibold text-hero-heading text-lg">בחר תיקייה לניווט</h3>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-200"
+                                className="text-hero-heading hover:text-hero-primary-main transition-colors p-1.5 rounded-lg hover:bg-hero-primary-main/10"
                             >
                                 <X size={20} />
                             </button>
@@ -91,40 +91,40 @@ export default function Hero() {
                             <Link
                                 href="/2025"
                                 onClick={() => setIsOpen(false)}
-                                className="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors group"
+                                className="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-hero-primary-main/10 border border-transparent hover:border-hero-primary-main transition-colors group"
                             >
-                                <Folder className="text-orange-400 group-hover:text-orange-500" size={24} />
+                                <Folder className="text-highlight group-hover:text-highlight-icon" size={24} />
                                 <div className="flex flex-col text-right">
-                                    <span className="text-slate-800 font-semibold group-hover:text-slate-900">שנה א'</span>
-                                    <span className="text-slate-500 text-sm">קורסי בסיס, אינפי, אלגברה ופיזיקה</span>
+                                    <span className="text-hero-heading font-semibold group-hover:text-hero-primary-main">שנה א'</span>
+                                    <span className="text-hero-muted text-sm">קורסי בסיס, אינפי, אלגברה ופיזיקה</span>
                                 </div>
                             </Link>
 
                             <Link
                                 href="/2026"
                                 onClick={() => setIsOpen(false)}
-                                className="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors group"
+                                className="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-hero-primary-main/10 border border-transparent hover:border-hero-primary-main transition-colors group"
                             >
-                                <Folder className="text-orange-400 group-hover:text-orange-500" size={24} />
+                                <Folder className="text-highlight group-hover:text-highlight-icon" size={24} />
                                 <div className="flex flex-col text-right">
-                                    <span className="text-slate-800 font-semibold group-hover:text-slate-900">שנה ב'</span>
-                                    <span className="text-slate-500 text-sm">ב-2027{/*TODO: In the next year, add this*/}</span>
+                                    <span className="text-hero-heading font-semibold group-hover:text-hero-primary-main">שנה ב'</span>
+                                    <span className="text-hero-muted text-sm">ב-2027{/*TODO: In the next year, add this*/}</span>
                                 </div>
                             </Link>
 
                             <Link
                                 href="/2027"
                                 onClick={() => setIsOpen(false)}
-                                className="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-colors group"
+                                className="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-hero-primary-main/10 border border-transparent hover:border-hero-primary-main transition-colors group"
                             >
-                                <Folder className="text-orange-400 group-hover:text-orange-500" size={24} />
+                                <Folder className="text-highlight group-hover:text-highlight-icon" size={24} />
                                 <div className="flex flex-col text-right">
-                                    <span className="text-slate-800 font-semibold group-hover:text-slate-900">שנה ג'</span>
-                                    <span className="text-slate-500 text-sm">ב-2028{/*TODO: In the next next year, add this*/}</span>
+                                    <span className="text-hero-heading font-semibold group-hover:text-hero-primary-main">שנה ג'</span>
+                                    <span className="text-hero-muted text-sm">ב-2028{/*TODO: In the next next year, add this*/}</span>
                                 </div>
                             </Link>
                             {/* --- The Modal Disclaimer --- */}
-                            <div className="bg-slate-50 border-t border-slate-100 p-4 mt-2">
+                            <div className="bg-hero-section-background border-t border-hero-border-subtle p-4 mt-2">
                                 <p className="text-xs text-slate-500 leading-relaxed text-right flex items-start gap-2">
                                     <span className="mt-0.5">⚠️</span>
                                     <span>
