@@ -77,7 +77,8 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
                 return (
                     <li key={item.id} className="my-1 flex flex-col" style={{ paddingRight: `${(item.level - 1) * 1.25}rem` }}>
                         <a
-                            href={`#${item.slug}`}
+                            href={`#${item.id}`}
+                            onClick={() => setIsMenuOpen(false)}
                             className={`transition-all duration-200 block py-1 border-r-2 ${isSectionActive
                                 ? "text-orange-500 bg-orange-500/10 font-bold"
                                 : "border-transparent hover:text-accent2-foreground hover:border-gray-600 px-2"
@@ -150,7 +151,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
 
         {/* The Drawer Panel */}
         <div
-            className={`fixed top-0 right-0 h-full w-72 sm:w-80 bg-accent2-background shadow-2xl z-60 transform transition-transform duration-300 xl:hidden overflow-y-auto no-scrollbar ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+            className={`fixed top-0 right-0 h-full w-72 sm:w-80 bg-accent2-background shadow-2xl z-[60] transform transition-transform duration-300 xl:hidden overflow-y-auto no-scrollbar ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}
             dir="rtl"
         >
@@ -182,7 +183,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
         {/* ---------------------- PHONE MENU ---------------------- */}
         <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="fixed bottom-6 right-6 z-70 w-14 h-14 flex items-center justify-center bg-hero-primary-main hover:bg-hero-primary-hover text-accent2-foreground rounded-full shadow-[0_4px_14px_var(--shadow-color)] transition-all duration-300 sm:hidden"
+            className="fixed bottom-6 right-6 z-[70] w-14 h-14 flex items-center justify-center bg-hero-primary-main hover:bg-hero-primary-hover text-accent2-foreground rounded-full shadow-[0_4px_14px_var(--shadow-color)] transition-all duration-300 sm:hidden"
             aria-label="Toggle Mobile Menu"
         >
             {/* Smooth icon transition rotation */}

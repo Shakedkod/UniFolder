@@ -534,13 +534,13 @@ html {
   /* Syntax Highlighting */
   --code-bg: var(--table-background);
   --code-border: var(--table-border);
-  --code-text: #fed7aa;     /* Very pale orange */
-  --code-keyword: #ff8903;  /* Your highlight orange */
-  --code-string: #fdba74;   /* Light orange */
-  --code-title: #f97316;    /* Standard orange */
-  --code-variable: #fb923c; /* Muted orange */
-  --code-comment: #78716c;  /* Warm stone gray */
-  --code-number: #ea580c;   /* Burnt orange */
+  --code-text: #431407;     /* Deep warm brown (Orange 950) for great readability */
+  --code-keyword: #ea580c;  /* Bright vibrant orange */
+  --code-string: #b45309;   /* Deep amber/gold */
+  --code-title: #9a3412;    /* Burnt rust orange */
+  --code-variable: #be123c; /* Warm rose/red for a little pop */
+  --code-comment: #a8a29e;  /* Warm stone gray */
+  --code-number: #dc2626;   /* Strong crimson red *
 }
 
 @media print {
