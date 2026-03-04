@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import Script from 'next/script';
+import { useTheme } from './ThemeProvider';
 
 declare global {
     interface Window {
@@ -9,21 +10,15 @@ declare global {
     }
 }
 
-export default function DesmosInitializer() {
-    // Keep track of all active calculators so we can update them if the theme changes
-    const calculatorsRef = useRef<any[]>([]);
+// 1. Updated to match the exact dark themes from your ThemeMenu
+const darkThemes = ['dark', 'theme-night', 'theme-deep-ocean', 'orange'];
 
-    const checkIsDarkTheme = useCallback(() => {
-        if (typeof window === 'undefined') return false;
-        
-        const bodyClass = document.body.className;
-        
-        // Add all your dark-variant theme classes here!
-        const darkThemes = ['dark', 'theme-midnight', 'theme-dracula', 'theme-ocean'];
-        
-        // Returns true if the body has any of the dark themes
-        return darkThemes.some(theme => bodyClass.includes(theme));
-    }, []);
+export default function DesmosInitializer() {
+    const { activeTheme } = useTheme();
+    const calculatorsRef = useRef<any[]>([]); 
+    
+    // 2. We derive the boolean directly from your active React context
+    const isDark = darkThemes.includes(activeTheme || "light");
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -50,8 +45,6 @@ export default function DesmosInitializer() {
     const initDesmos = useCallback(() => {
         if (!window.Desmos) return;
 
-        // Check the current system/browser theme
-        const isDarkTheme = checkIsDarkTheme();
         const placeholders = document.querySelectorAll('.desmos-placeholder:not(.initialized)');
 
         placeholders.forEach((el) => {
@@ -59,19 +52,18 @@ export default function DesmosInitializer() {
             const eqStr = decodeURIComponent(el.getAttribute('data-equations') || '');
             const configStr = decodeURIComponent(el.getAttribute('data-config') || '');
 
-            // 1. Initialize the Graph dynamically
+            // Initialize the Graph dynamically using the current theme state
             const calc = window.Desmos.GraphingCalculator(el, {
                 expressions: false,
                 settingsMenu: false,
                 zoomButtons: false,
                 lockViewport: true,
-                invertedColors: isDarkTheme // Matches your current theme!
+                invertedColors: isDark // Passes the initial true/false
             });
 
-            // Store the calculator instance so we can update it later
             calculatorsRef.current.push(calc);
 
-            // 2. Set Math Bounds (left, right, bottom, top)
+            // Set Math Bounds
             let mathBounds: any = {};
             const leftMatch = configStr.match(/left=(-?[\d.]+)/);
             if (leftMatch) mathBounds.left = parseFloat(leftMatch[1]);
@@ -86,7 +78,7 @@ export default function DesmosInitializer() {
                 calc.setMathBounds(mathBounds);
             }
 
-            // 3. Parse and Inject Equations
+            // Parse and Inject Equations
             const equations = eqStr.split('\n').map(e => e.trim()).filter(e => e);
             equations.forEach((eq, idx) => {
                 let latex = eq;
@@ -112,30 +104,23 @@ export default function DesmosInitializer() {
                 calc.setExpression({ id: 'eq' + idx, latex: latex, color: color, lineStyle: style });
             });
         });
-    }, [checkIsDarkTheme]);
+    }, [isDark]);
 
-    // Also run on mount in case the script was already loaded
+    // Run on mount in case the script was already loaded
     useEffect(() => {
         initDesmos();
     }, [initDesmos]);
 
-    // --- NEW: Listen for theme changes in real-time ---
+    // 3. THE MAGIC: React directly to your ThemeMenu changing!
+    // Because your ThemeProvider automatically updates `activeTheme` when the 
+    // OS changes (if set to System), we don't need a matchMedia listener here at all.
     useEffect(() => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        
-        const handleThemeChange = (e: MediaQueryListEvent) => {
-            const isDarkNow = e.matches;
-            // Instantly flip all active graphs to the new theme
-            calculatorsRef.current.forEach(calc => {
-                if (calc && typeof calc.updateSettings === 'function') {
-                    calc.updateSettings({ invertedColors: isDarkNow });
-                }
-            });
-        };
-
-        mediaQuery.addEventListener('change', handleThemeChange);
-        return () => mediaQuery.removeEventListener('change', handleThemeChange);
-    }, []);
+        calculatorsRef.current.forEach(calc => {
+            if (calc && typeof calc.updateSettings === 'function') {
+                calc.updateSettings({ invertedColors: isDark });
+            }
+        });
+    }, [isDark]); // Re-runs instantly whenever the menu drops down and a user clicks a color
 
     return (
         <Script

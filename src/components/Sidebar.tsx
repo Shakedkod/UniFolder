@@ -52,9 +52,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
                         setActiveId(entry.target.id);
                     }
                 });
-            },
-            // Triggers when the element hits the top 20% of the screen
-            { rootMargin: "-10% 0px -80% 0px" }
+            }
         );
 
         headingIds.forEach((id) => {

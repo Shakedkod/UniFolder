@@ -3,17 +3,18 @@ import path from 'path';
 import { execSync } from 'child_process';
 import matter from 'gray-matter';
 import GithubSlugger from 'github-slugger';
+import { renderMarkdownContent } from '@/lib/processor';
+import { VAULT_DIRECTORY } from '@/lib/vault';
 
 // CLOUD CONFIGURATION
 const GITHUB_PAT = process.env.GITHUB_PAT;
 const VAULT_REPO = 'github.com/ShakedKod/ShakedKodPrivate.git';
 
 const TEMP_DIR = path.join(process.cwd(), 'temp_vault');
-const DEST_VAULT = path.join(process.cwd(), 'public', 'vault');
 const PUBLIC_IMAGES_DIR = path.join(process.cwd(), 'public', 'vault-images');
 
 // THE DICTIONARY (Only for permanent structural folders!)
-const DICTIONARY = {
+const DICTIONARY: { [key: string]: string } = {
     'תואר ראשון במדעי המחשב': 'bsc-cs',
     'סמסטר א': 'semester-a',
     'סמסטר א\'': 'semester-a',
@@ -25,7 +26,7 @@ const DICTIONARY = {
 };
 
 // ---  Hebrew to English Transliteration Fallback ---
-const HEBREW_MAP = {
+const HEBREW_MAP: { [key: string]: string } = {
     'א': 'a', 'ב': 'b', 'ג': 'g', 'ד': 'd', 'ה': 'h', 'ו': 'v', 'ז': 'z', 'ח': 'ch',
     'ט': 't', 'י': 'y', 'כ': 'k', 'ך': 'k', 'ל': 'l', 'מ': 'm', 'ם': 'm', 'נ': 'n',
     'ן': 'n', 'ס': 's', 'ע': 'a', 'פ': 'p', 'ף': 'p', 'צ': 'tz', 'ץ': 'tz', 'ק': 'k',
@@ -33,20 +34,27 @@ const HEBREW_MAP = {
 };
 
 // The expanded list of academic and code extensions
-const allowedExtensions = [
+const allowedExtensions: string[] = [
     '.md', '.c', '.h', '.cpp', '.hpp',
     '.java', '.py', '.js', '.ts',
     '.sh', '.sql', '.json', '.yaml', '.yml'
 ];
 
-function transliterate(str)
-{
+interface VaultItem {
+    name: string;
+    title: string;
+    path: string;
+    isDirectory: boolean;
+    fullPath: string;
+    children?: VaultItem[];
+}
+
+function transliterate(str: string): string {
     return str.split('').map(char => HEBREW_MAP[char] || char).join('');
 }
 
 // --- UPGRADED: Smart Slug Generator ---
-function getSlugName(name)
-{
+function getSlugName(name: string): string {
     // 1. Check Dictionary first (Highest priority for structural folders)
     if (DICTIONARY[name]) return DICTIONARY[name];
 
@@ -70,7 +78,7 @@ function getSlugName(name)
     return safeAscii.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-const FOLDER_DICTIONARY = {
+const FOLDER_DICTIONARY: { [key: string]: string } = {
     'semester-a': "סמסטר א'",
     'semester-b': "סמסטר ב'",
     'bsc-cs': 'תואר ראשון במדעי המחשב',
@@ -78,27 +86,21 @@ const FOLDER_DICTIONARY = {
     'tutorials': 'תרגול',
 };
 
-var dynamicFolderMap = {};
+var dynamicFolderMap: { [key: string]: string } = {};
 
-function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '')
-{
+function getVaultTree(dir: string = VAULT_DIRECTORY, currentPath: string = ''): VaultItem[] {
     if (!fs.existsSync(dir)) return [];
 
     // --- NEW: Load the auto-generated folder map ---
-    if (Object.keys(dynamicFolderMap).length === 0)
-    {
-        try
-        {
+    if (Object.keys(dynamicFolderMap).length === 0) {
+        try {
             const mapPath = path.join(VAULT_DIRECTORY, 'folder-map.json');
-            if (fs.existsSync(mapPath))
-            {
+            if (fs.existsSync(mapPath)) {
                 dynamicFolderMap = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
-            } else
-            {
+            } else {
                 dynamicFolderMap = {};
             }
-        } catch
-        {
+        } catch {
             dynamicFolderMap = {};
         }
     }
@@ -106,8 +108,7 @@ function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '')
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     const tree = [];
 
-    for (const entry of entries)
-    {
+    for (const entry of entries) {
         if (entry.name.startsWith('.')) continue;
 
         // --- NEW: Hide the system mapping file from the TOC ---
@@ -117,12 +118,10 @@ function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '')
         const slug = entry.name.replace(/\.md$/, '');
         const itemPath = `${currentPath}/${slug}`;
 
-        if (entry.isDirectory())
-        {
+        if (entry.isDirectory()) {
             const children = getVaultTree(fullPath, itemPath);
 
-            if (children.length > 0)
-            {
+            if (children.length > 0) {
                 tree.push({
                     name: entry.name,
                     // --- NEW: Check the dynamic map before falling back to the raw name ---
@@ -133,12 +132,10 @@ function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '')
                     children: children
                 });
             }
-        } else if (allowedExtensions.includes(path.extname(entry.name).toLowerCase()))
-        {
+        } else if (allowedExtensions.includes(path.extname(entry.name).toLowerCase())) {
             const content = fs.readFileSync(fullPath, 'utf8');
 
-            if (path.extname(entry.name).toLowerCase() === '.md')
-            {
+            if (path.extname(entry.name).toLowerCase() === '.md') {
                 const { data } = matter(content);
 
                 tree.push({
@@ -149,8 +146,7 @@ function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '')
                     isDirectory: false
                 });
             }
-            else
-            {
+            else {
                 tree.push({
                     name: slug,
                     title: slug.replace(/-/g, ' '),
@@ -163,8 +159,7 @@ function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '')
     }
 
     // Sort the tree
-    return tree.sort((a, b) =>
-    {
+    return tree.sort((a, b) => {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
 
@@ -176,8 +171,7 @@ function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '')
     });
 }
 
-function cleanMarkdown(text)
-{
+function cleanMarkdown(text: string): string {
     return text
         .replace(/!\[\[.*?\]\]/g, '')         // Remove image embeds
         .replace(/\[\[(.*?)\]\]/g, '$1')      // Simplify internal links
@@ -188,19 +182,22 @@ function cleanMarkdown(text)
         .trim();
 }
 
-function generateSearchIndex(vaultTree)
-{
-    const index = [];
+interface SearchIndexItem {
+    title: string;
+    path: string;
+    content?: string;
+    excerpt: string;
+    priority: number;
+}
 
-    function traverse(items)
-    {
-        for (const item of items)
-        {
-            if (item.isDirectory)
-            {
-                traverse(item.children);
-            } else
-            {
+function generateSearchIndex(vaultTree: VaultItem[]) {
+    const index: SearchIndexItem[] = [];
+
+    function traverse(items: VaultItem[]) {
+        for (const item of items) {
+            if (item.isDirectory) {
+                if (item.children) traverse(item.children);
+            } else {
                 const content = fs.readFileSync(item.fullPath, 'utf8');
 
                 index.push({
@@ -210,13 +207,11 @@ function generateSearchIndex(vaultTree)
                     priority: 1 // We'll use this for sorting later
                 });
 
-                if (path.extname(item.fullPath).toLowerCase() === '.md')
-                {
+                if (path.extname(item.fullPath).toLowerCase() === '.md') {
                     const sections = content.split(/(?=^#{1,6} )/gm);
                     const slugger = new GithubSlugger();
 
-                    sections.forEach((section, i) =>
-                    {
+                    sections.forEach((section, i) => {
                         const lines = section.trim().split('\n');
                         const header = lines[0].replace(/^#+ /, '').trim();
                         if (!header || header === '---') return;
@@ -234,8 +229,7 @@ function generateSearchIndex(vaultTree)
                         });
                     });
                 }
-                else
-                {
+                else {
                     index.push({
                         title: item.title,
                         path: item.path,
@@ -252,15 +246,64 @@ function generateSearchIndex(vaultTree)
     fs.writeFileSync('./public/search-index.json', JSON.stringify(index));
 }
 
-const autoFolderMap = {};
+async function processVaultFile(rawContent: string, filename: string, title: string, extension: string, destPath: string) {
+    // FIX 1: Strip the leading dot so ".c" becomes "c"
+    const cleanExt = extension.startsWith('.') ? extension.substring(1) : extension;
 
-function syncVault(srcDir, destDir)
-{
+    // 1. Determine if it's a code file (C, Java, Python, etc.)
+    const codeExtensions: { [key: string]: string } = {
+        'c': 'c',
+        'h': 'c',
+        'cpp': 'cpp',
+        'hpp': 'cpp',
+        'java': 'java',
+        'py': 'python',
+        'js': 'javascript',
+        'ts': 'typescript',
+        'sh': 'bash',
+        'sql': 'sql',
+        'json': 'json',
+        'yaml': 'yaml',
+        'yml': 'yaml'
+    };
+    
+    // Now it will correctly find 'c' in the dictionary!
+    const isCodeFile = !!codeExtensions[cleanExt];
+
+    let markdownContent = rawContent;
+
+    // 2. Wrap code files in markdown syntax
+    if (isCodeFile) {
+        const lang = codeExtensions[cleanExt];
+        markdownContent = `> [!remark|*] קובץ קוד\n> קובץ זה הוא קובץ קוד מסוג **${lang.toUpperCase()}**.\n\n\`\`\`${lang}\n${rawContent}\n\`\`\``;
+    } else {
+        const { data } = matter(rawContent);
+        if (data.title) title = data.title;
+    }
+
+    // 3. Perform the heavy lifting here!
+    const { contentHtml, toc } = await renderMarkdownContent(markdownContent);
+
+    // 4. Save as a pre-compiled JSON blob
+    const compiledData = {
+        title,
+        isCodeFile,
+        toc,
+        html: contentHtml
+    };
+
+    // Save it as a .json file 
+    const outputFilename = filename + ".json";
+    fs.writeFileSync(path.join(destPath, outputFilename), JSON.stringify(compiledData));
+}
+
+const autoFolderMap: { [key: string]: string } = {};
+
+function syncVault(srcDir: string, destDir: string) {
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
     const entries = fs.readdirSync(srcDir, { withFileTypes: true });
 
-    for (const entry of entries)
-    {
+    for (const entry of entries) {
         if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
 
         const srcPath = path.join(srcDir, entry.name);
@@ -269,57 +312,38 @@ function syncVault(srcDir, destDir)
         const englishName = getSlugName(originalName);
         const destPath = path.join(destDir, englishName + ext);
 
-        if (entry.isDirectory())
-        {
+        if (entry.isDirectory()) {
             autoFolderMap[englishName] = originalName;
             syncVault(srcPath, destPath);
-        } else if (ext === '.md')
-        {
+        } else if (ext === '.md') {
             let content = fs.readFileSync(srcPath, 'utf8');
 
             content = content.replace(/<h1[^>]*>[\s\S]*?<div[^>]*class="page-break"[^>]*>.*?<\/div>\s*/i, '');
             content = content.replace(/<div[^>]*class="private"[^>]*>.*?<\/div>\s*/gi, '');
 
-            // Inject Hebrew Title
-            if (!content.startsWith('---'))
-            {
-                // If no frontmatter exists, create it
-                content = `---\ntitle: "${originalName}"\n---\n\n${content}`;
-            } else if (!content.includes('title:'))
-            {
-                // If frontmatter exists, inject the title on the second line
-                // The \r? ensures it works on both Windows and Mac/Linux line endings
-                content = content.replace(/^---\r?\n/, `---\ntitle: "${originalName}"\n`);
-            }
-
-            fs.writeFileSync(destPath, content, 'utf8');
+            processVaultFile(content, englishName, originalName, ext, destDir);
         }
-        else if (allowedExtensions.includes(ext))
-        {
-            fs.copyFileSync(srcPath, destPath);
+        else if (allowedExtensions.includes(ext)) {
+            // FIX 3: Pass "englishName + ext" so it saves as "name.c.json"
+            processVaultFile(fs.readFileSync(srcPath, 'utf8'), englishName + ext, originalName, ext, destDir);
         }
     }
 }
 
-function syncImages(srcDir)
-{
+function syncImages(srcDir: string) {
     const entries = fs.readdirSync(srcDir, { withFileTypes: true });
 
-    for (const entry of entries)
-    {
+    for (const entry of entries) {
         // Skip hidden folders
         if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.parentPath.includes("School") || entry.parentPath.includes("Self") || entry.parentPath.includes("Projects")) continue;
 
         const srcPath = path.join(srcDir, entry.name);
 
-        if (entry.isDirectory())
-        {
+        if (entry.isDirectory()) {
             syncImages(srcPath); // Recursively search all folders
-        } else
-        {
+        } else {
             const ext = path.extname(entry.name).toLowerCase();
-            if (['.png', '.jpg', '.jpeg', '.gif', '.svg'].includes(ext))
-            {
+            if (['.png', '.jpg', '.jpeg', '.gif', '.svg'].includes(ext)) {
                 const imageDestPath = path.join(PUBLIC_IMAGES_DIR, entry.name);
                 fs.copyFileSync(srcPath, imageDestPath);
                 console.log(`🖼️ Copied image: ${entry.name}`);
@@ -329,17 +353,15 @@ function syncImages(srcDir)
 }
 
 // 4. THE CLOUD EXECUTION
-async function main()
-{
+async function main() {
     console.log('🔒 Authenticating and cloning private vault...');
-    if (!GITHUB_PAT)
-    {
+    if (!GITHUB_PAT) {
         console.error('❌ GITHUB_PAT is missing! Cannot clone private vault.');
         process.exit(1);
     }
 
     if (fs.existsSync(TEMP_DIR)) fs.rmSync(TEMP_DIR, { recursive: true, force: true });
-    if (fs.existsSync(DEST_VAULT)) fs.rmSync(DEST_VAULT, { recursive: true, force: true });
+    if (fs.existsSync(VAULT_DIRECTORY)) fs.rmSync(VAULT_DIRECTORY, { recursive: true, force: true });
     if (fs.existsSync(PUBLIC_IMAGES_DIR)) fs.rmSync(PUBLIC_IMAGES_DIR, { recursive: true, force: true });
 
     fs.mkdirSync(PUBLIC_IMAGES_DIR, { recursive: true });
@@ -352,11 +374,9 @@ async function main()
 
     const SPECIFIC_FOLDER = path.join(TEMP_DIR, "01 - University", "02 - Technion", "תואר ראשון במדעי המחשב");
 
-    if (fs.existsSync(SPECIFIC_FOLDER))
-    {
-        syncVault(SPECIFIC_FOLDER, DEST_VAULT);
-    } else
-    {
+    if (fs.existsSync(SPECIFIC_FOLDER)) {
+        syncVault(SPECIFIC_FOLDER, VAULT_DIRECTORY);
+    } else {
         console.error('❌ Could not find the folder "תואר ראשון במדעי המחשב" in the repository.');
     }
 
@@ -364,13 +384,13 @@ async function main()
 
     // Save the folder memory map to the vault!
     fs.writeFileSync(
-        path.join(DEST_VAULT, 'folder-map.json'),
+        path.join(VAULT_DIRECTORY, 'folder-map.json'),
         JSON.stringify(autoFolderMap, null, 2)
     );
 
     // Generate search index after syncing
     console.log('🔍 Generating search index...')
-    const vaultTree = getVaultTree(DEST_VAULT);
+    const vaultTree = getVaultTree(VAULT_DIRECTORY);
     generateSearchIndex(vaultTree);
 
     console.log('✨ Vault Sync Complete!');

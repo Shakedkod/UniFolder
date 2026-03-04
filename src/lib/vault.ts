@@ -21,7 +21,7 @@ const FOLDER_DICTIONARY: Record<string, string> = {
     'dorms': 'מעונות'
 };
 
-const VAULT_DIRECTORY = path.join(process.cwd(), 'public', 'vault');
+export const VAULT_DIRECTORY = path.join(process.cwd(), 'public', 'vault');
 
 export function isVaultDirectory(slug: string[]): boolean {
     const fullPath = path.join(VAULT_DIRECTORY, ...slug);
@@ -53,54 +53,54 @@ export function getFriendlyName(slug: string): string {
 
 export function getFolderContents(slug: string[]) {
     const fullPath = path.join(VAULT_DIRECTORY, ...slug);
+    if (!fs.existsSync(fullPath)) return [];
     
-    // Read the directory contents
     const items = fs.readdirSync(fullPath, { withFileTypes: true });
-
     return items
-        // Filter out hidden files or obsidian system folders
-        .filter(item => !item.name.startsWith('.') && item.name !== '_attachments')
+        // Filter out hidden files, system folders, and make sure we only read directories or our compiled .json files
+        .filter(item => !item.name.startsWith('.') && item.name !== '_attachments' && (item.isDirectory() || item.name.endsWith('.json')))
         .map(item => {
             const isDir = item.isDirectory();
-            const cleanName = item.name.replace('.md', '');
+            
+            // Strip ONLY the .json extension to build the clean URL (e.g., "hw2q2.c.json" -> "hw2q2.c")
+            const cleanName = item.name.replace(/\.json$/, '');
 
-            let displayName = cleanName;
+            // For display purposes, we might want to strip the .md as well so the sidebar just says "0 - הקדמה"
+            let displayName = cleanName.replace(/\.md$/, '');
 
             if (isDir) {
                 // 1. If it's a folder, use our JSON dictionary
                 displayName = getFriendlyName(cleanName);
-            } else if (item.name.endsWith('.md')) {
-                // 2. If it's a file, peek inside its frontmatter for the real title!
+            } else if (item.name.endsWith('.json')) {
+                // 2. If it's a file, peek inside our pre-compiled JSON for the real title!
                 try {
                     const filePath = path.join(fullPath, item.name);
                     const fileContents = fs.readFileSync(filePath, 'utf8');
-                    const { data } = matter(fileContents);
                     
-                    if (data.title) {
-                        displayName = data.title;
+                    // Native JSON parsing is incredibly fast compared to parsing Markdown frontmatter!
+                    const compiledData = JSON.parse(fileContents); 
+                    
+                    if (compiledData.title) {
+                        displayName = compiledData.title;
                     }
                 } catch (err) {
-                    console.error(`Failed to read frontmatter for ${item.name}`, err);
+                    console.error(`Failed to read JSON for ${item.name}`, err);
                 }
             }
             
             return {
-                name: cleanName,
+                name: cleanName, 
                 displayName: displayName,
                 isDirectory: isDir,
-                // Build the URL path for the Next.js Link component
+                // Build the URL path for the Next.js Link component (Preserves the .md or .c extensions!)
                 href: `/${slug.join('/')}/${cleanName}`
             };
         })
         // Sort folders first, then files alphabetically
         .sort((a, b) => {
-            // 1. Always keep folders at the top of the grid
             if (a.isDirectory !== b.isDirectory) {
                 return a.isDirectory ? -1 : 1;
             }
-            
-            // 2. Use "Natural Sorting" on the display name
-            // 'numeric: true' forces JS to treat "11" as the number 11, not the string "1" + "1"
             return a.displayName.localeCompare(b.displayName, 'he', { numeric: true });
         });
 }

@@ -132,8 +132,8 @@ const rehypeObsidianCallouts = () => {
                         const mathTypes = ['theorem', 'axiom', 'definition', 'claim', 'lemma', 'corollary', 'example', 'exercise', 'hypothesis'];
 
                         let numberStr = "";
-                        if (modifier === "*") numberStr = ""; 
-                        else if (modifier) numberStr = ` ${modifier}`; 
+                        if (modifier === "*") numberStr = "";
+                        else if (modifier) numberStr = ` ${modifier}`;
                         else if (mathTypes.includes(calloutType)) {
                             counters[calloutType] = (counters[calloutType] || 0) + 1;
                             numberStr = ` ${counters[calloutType]}`;
@@ -180,7 +180,7 @@ const rehypeObsidianCallouts = () => {
 
                         // Clean up leading empty text node in body if any
                         if (firstChild.children.length > 0 && firstChild.children[0].type === 'text' && !firstChild.children[0].value.trim()) {
-                                firstChild.children.shift();
+                            firstChild.children.shift();
                         }
 
                         // 4. Build the Display Title Array
@@ -293,7 +293,7 @@ export async function renderMarkdownContent(markdownContent: string) {
         .replace(/^[ \t]+\$\$/gm, '$$') // Snaps over-indented $$ in regular lists back to the safe margin
         .replace(/(?:\n|\s)\^([a-zA-Z0-9]{5,})(?=\s|$)/g, '\n<a id="$1" class="obsidian-block-anchor"></a>\n')
         .replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, filename, meta) => {
-            let cleanFilename = filename.trim();
+            let cleanFilename = filename.trim().replace(/\\$/, '').replace(/\\/g, '/');
             if (cleanFilename.endsWith('.excalidraw')) cleanFilename += '.svg';
 
             let styles = "";
@@ -316,8 +316,7 @@ export async function renderMarkdownContent(markdownContent: string) {
                     }
                 }
             }
-            else
-            {
+            else {
                 widthAttr = ` width="400"`;
                 styles = 'style="width: 400px; height: auto;"';
             }
@@ -329,7 +328,7 @@ export async function renderMarkdownContent(markdownContent: string) {
         })
         .replace(/(?<!\!)\[\[(.*?)\]\]/g, (match, linkContent) => {
             // 1. Extract the title and target
-            const parts = linkContent.split('|');
+            const parts = linkContent.replace(/\\\|/g, '|').split('|');
             let target = parts[0];
             const title = parts[1] || target.split(/[/\\]/).pop();
 

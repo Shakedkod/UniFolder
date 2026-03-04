@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "sync": "node src/scripts/sync-vault.mjs",
-    "build": "node src/scripts/sync-vault.mjs && next build",
+    "sync": "npx tsx src/scripts/sync-vault.ts",
+    "build": "npx tsx src/scripts/sync-vault.ts && next build",
     "start": "next start",
     "lint": "eslint"
   },

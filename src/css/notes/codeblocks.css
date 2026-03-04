@@ -2,13 +2,14 @@
    Theme-Aware Code Blocks (highlight.js)
    ========================================= */
 
-/* 1. Base wrapper styling (Applies to both themes) */
+/* 2. Base wrapper styling */
 pre {
     margin: 1.5rem 0;
     border-radius: 0.75rem;
-    border: 1px solid var(--border-subtle, var(--hero-border-subtle));
+    border: 1px solid var(--code-border);
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 15px var(--shadow-color);
+    transition: all 0.3s ease; /* Smooth transition when changing themes */
 }
 
 .hljs {
@@ -18,31 +19,22 @@ pre {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 0.875rem;
     line-height: 1.5;
+    background: var(--code-bg);
+    color: var(--code-text);
+    transition: all 0.3s ease;
 }
 
-/* -----------------------------------------
-   2. LIGHT THEME (Default)
-   ----------------------------------------- */
-.hljs {
-    background: var(--table-background);
-    /* slate-50 */
-    color: #334155;
-    /* slate-700 */
-}
-
-/* Syntax Colors for Light Mode */
+/* 3. Apply the variables to Highlight.js tokens */
 .hljs-keyword,
 .hljs-selector-tag,
 .hljs-literal,
 .hljs-section,
-.hljs-link {
-    color: #2563eb;
+.hljs-link,
+.hljs-function .hljs-keyword,
+.hljs-doctag,
+.hljs-formula {
+    color: var(--code-keyword);
     font-weight: 600;
-}
-
-/* blue-600 */
-.hljs-function .hljs-keyword {
-    color: #2563eb;
 }
 
 .hljs-string,
@@ -50,110 +42,30 @@ pre {
 .hljs-symbol,
 .hljs-bullet,
 .hljs-addition {
-    color: #16a34a;
+    color: var(--code-string);
 }
 
-/* green-600 */
 .hljs-title,
 .hljs-name,
 .hljs-type,
 .hljs-attribute {
-    color: #d97706;
+    color: var(--code-title);
     font-weight: 600;
 }
 
-/* amber-600 */
 .hljs-variable,
 .hljs-template-variable {
-    color: #db2777;
+    color: var(--code-variable);
 }
 
-/* pink-600 */
 .hljs-comment,
 .hljs-quote,
 .hljs-deletion,
 .hljs-meta {
-    color: #94a3b8;
+    color: var(--code-comment);
     font-style: italic;
 }
 
-/* slate-400 */
-.hljs-doctag,
-.hljs-formula {
-    color: #2563eb;
-}
-
 .hljs-number {
-    color: #ea580c;
-}
-
-/* orange-600 */
-
-/* -----------------------------------------
-   3. DARK THEME 
-   (Triggers if you use Tailwind's 'dark' class or system preference)
-   ----------------------------------------- */
-.dark {
-    /* Alternatively, change this to '.dark .hljs' if you use a theme toggle button */
-
-    pre {
-        border-color: #334155;
-        /* slate-700 */
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    }
-
-    .hljs {
-        background: #0f172a;
-        /* slate-900 */
-        color: #cbd5e1;
-        /* slate-300 */
-    }
-
-    /* Syntax Colors for Dark Mode */
-    .hljs-keyword,
-    .hljs-selector-tag,
-    .hljs-literal,
-    .hljs-section,
-    .hljs-link {
-        color: #60a5fa;
-    }
-
-    /* blue-400 */
-    .hljs-string,
-    .hljs-attr,
-    .hljs-symbol,
-    .hljs-bullet,
-    .hljs-addition {
-        color: #4ade80;
-    }
-
-    /* green-400 */
-    .hljs-title,
-    .hljs-name,
-    .hljs-type,
-    .hljs-attribute {
-        color: #fbbf24;
-    }
-
-    /* amber-400 */
-    .hljs-variable,
-    .hljs-template-variable {
-        color: #f472b6;
-    }
-
-    /* pink-400 */
-    .hljs-comment,
-    .hljs-quote,
-    .hljs-deletion,
-    .hljs-meta {
-        color: #64748b;
-        font-style: italic;
-    }
-
-    /* slate-500 */
-    .hljs-number {
-        color: #fb923c;
-    }
-
-    /* orange-400 */
+    color: var(--code-number);
 }

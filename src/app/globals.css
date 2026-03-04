@@ -140,6 +140,17 @@ html {
   --table-row-even-bg: #f5faff;
   --table-row-hover-bg: #e2e8f0;
   --table-cell-border: #cbd5e1;
+
+  /* Syntax Highlighting */
+  --code-bg: var(--table-background);
+  --code-border: var(--table-border);
+  --code-text: #334155;
+  --code-keyword: #2563eb; /* Strong Blue */
+  --code-string: #16a34a;  /* Green */
+  --code-title: #d97706;   /* Amber */
+  --code-variable: #db2777; /* Pink */
+  --code-comment: #94a3b8; /* Gray */
+  --code-number: #ea580c;  /* Orange */
 }
 
 .dark
@@ -207,6 +218,17 @@ html {
   --table-row-even-bg: rgba(255, 255, 255, 0.03);
   --table-row-hover-bg: rgba(251, 146, 60, 0.05);
   --table-cell-border: #1f2937;
+
+  /* Syntax Highlighting */
+  --code-bg: var(--table-background);
+  --code-border: var(--table-border);
+  --code-text: #cbd5e1;
+  --code-keyword: #60a5fa;
+  --code-string: #4ade80;
+  --code-title: #fbbf24;
+  --code-variable: #f472b6;
+  --code-comment: #64748b;
+  --code-number: #fb923c;
 }
 
 .deep-ocean
@@ -274,6 +296,17 @@ html {
   --table-row-even-bg: rgba(255, 255, 255, 0.02);
   --table-row-hover-bg: rgba(6, 182, 212, 0.05);
   --table-cell-border: #1e293b;
+
+  /* Syntax Highlighting */
+  --code-bg: var(--table-background);
+  --code-border: var(--table-border);
+  --code-text: #e2e8f0;
+  --code-keyword: #22d3ee; /* Bright Cyan */
+  --code-string: #34d399;  /* Sea Green */
+  --code-title: #38bdf8;   /* Sky Blue */
+  --code-variable: #818cf8; /* Indigo */
+  --code-comment: #475569; /* Deep Slate */
+  --code-number: #fcd34d;  /* Sand Yellow */
 }
 
 .github-light
@@ -341,6 +374,17 @@ html {
   --table-row-even-bg: #f6f8fa;
   --table-row-hover-bg: #ddf4ff;
   --table-cell-border: #d0d7de;
+
+  /* Syntax Highlighting */
+  --code-bg: var(--table-background);
+  --code-border: var(--table-border);
+  --code-text: #334155;
+  --code-keyword: #2563eb; /* Strong Blue */
+  --code-string: #16a34a;  /* Green */
+  --code-title: #d97706;   /* Amber */
+  --code-variable: #db2777; /* Pink */
+  --code-comment: #94a3b8; /* Gray */
+  --code-number: #ea580c;  /* Orange */
 }
 
 .night
@@ -408,6 +452,17 @@ html {
   --table-row-even-bg: rgba(255, 255, 255, 0.02);
   --table-row-hover-bg: rgba(203, 166, 247, 0.05);
   --table-cell-border: #313244;
+
+  /* Syntax Highlighting */
+  --code-bg: var(--table-background);
+  --code-border: var(--table-border);
+  --code-text: #cdd6f4;
+  --code-keyword: #cba6f7; /* Mauve / Purple */
+  --code-string: #a6e3a1;  /* Soft Green */
+  --code-title: #89b4fa;   /* Soft Blue */
+  --code-variable: #f38ba8; /* Soft Red/Pink */
+  --code-comment: #6c7086; /* Muted Gray-Purple */
+  --code-number: #fab387;  /* Peach */
 }
 
 .warm-light
@@ -475,6 +530,17 @@ html {
   --table-row-even-bg: #fefbf5;
   --table-row-hover-bg: #fef3c7;
   --table-cell-border: #eaddcf;
+
+  /* Syntax Highlighting */
+  --code-bg: var(--table-background);
+  --code-border: var(--table-border);
+  --code-text: #fed7aa;     /* Very pale orange */
+  --code-keyword: #ff8903;  /* Your highlight orange */
+  --code-string: #fdba74;   /* Light orange */
+  --code-title: #f97316;    /* Standard orange */
+  --code-variable: #fb923c; /* Muted orange */
+  --code-comment: #78716c;  /* Warm stone gray */
+  --code-number: #ea580c;   /* Burnt orange */
 }
 
 @media print {
