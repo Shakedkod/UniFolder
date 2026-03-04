@@ -540,7 +540,7 @@ html {
   --code-title: #9a3412;    /* Burnt rust orange */
   --code-variable: #be123c; /* Warm rose/red for a little pop */
   --code-comment: #a8a29e;  /* Warm stone gray */
-  --code-number: #dc2626;   /* Strong crimson red *
+  --code-number: #dc2626;   /* Strong crimson red */
 }
 
 @media print {
