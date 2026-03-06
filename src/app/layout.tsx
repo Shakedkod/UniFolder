@@ -31,6 +31,26 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
     return (
         <html lang="en" className="light" suppressContentEditableWarning>
+            <head>
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            try {
+                                // Change 'theme' to whatever key your ThemeProvider uses to save in localStorage!
+                                const savedTheme = localStorage.getItem('theme'); 
+
+                                if (savedTheme) {
+                                    document.documentElement.classList.add(savedTheme);
+                                } else {
+                                    // Fallback to OS preference if they've never picked a theme
+                                    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                                    document.documentElement.classList.add(isDark ? 'dark' : 'light');
+                                }
+                            } catch (e) {}
+                        `,
+                    }}
+                />
+            </head>
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} dir="rtl">
                 <ThemeProvider>
                     <Search />

@@ -107,3 +107,56 @@ article.academic-preview .obsidian-image {
 .dark .academic-preview img[src*=".excalidraw.svg"], .deep-ocean .academic-preview img[src*=".excalidraw.svg"], .night .academic-preview img[src*=".excalidraw.svg"] {
     filter: invert(1) hue-rotate(180deg);
 }
+
+/* Tell the browser to only render heavy elements when you scroll near them! */
+.callout, 
+pre, 
+table, 
+.desmos-placeholder {
+    content-visibility: auto;
+    /* Optional: Give it a rough height so the scrollbar doesn't jump wildly */
+    contain-intrinsic-size: 200px; 
+}
+
+/* =========================================
+   Theme-Aware Inline Links (Tailwind Override)
+   ========================================= */
+
+/* Target your custom links AND standard Tailwind prose links */
+.prose a, 
+a.theme-link {
+    color: var(--color-highlight) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    border-bottom: 1px solid transparent !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+/* Hover state */
+.prose a:hover, 
+a.theme-link:hover {
+    color: var(--color-highlight-icon) !important;
+    border-bottom-color: var(--color-highlight-icon) !important;
+}
+
+/* Protect the Sidebar and Callout titles from turning into theme links! */
+.callout-title-inner a,
+.sidebar-container a, /* Adjust if your sidebar has a different class */
+h1 a, h2 a, h3 a, h4 a {
+    color: inherit !important;
+    border-bottom: none !important;
+}
+
+/* Sidebar Link Hover Effects */
+[data-toc-id] a {
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+[data-toc-id] a:active {
+    transform: scale(0.98);
+}
+
+/* Smooth transition for the active border highlight */
+.active-heading-highlight {
+    transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

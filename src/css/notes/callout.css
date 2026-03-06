@@ -160,3 +160,34 @@
     outline-offset: 4px;
     border-radius: 4px;
 }
+
+/* 1. Define the fade-out animation (Keep this exactly as it is) */
+@keyframes temporaryFocus {
+    0% {
+        outline-color: var(--highlight, #ea580c);
+    }
+    70% {
+        outline-color: var(--highlight, #ea580c);
+    }
+    100% {
+        outline-color: transparent;
+    }
+}
+
+/* 2. Apply it to callouts, links, and buttons when clicked */
+.callout:focus,
+a:focus,
+button:focus {
+    outline: 2px solid transparent; 
+    outline-offset: 4px;
+    border-radius: 4px; /* Added a tiny 4px radius so link outlines have soft corners! */
+    animation: temporaryFocus 2s ease-out forwards;
+}
+
+/* 3. Keep it permanent for keyboard navigation across the entire site! */
+.callout:focus-visible,
+a:focus-visible,
+button:focus-visible {
+    outline-color: var(--highlight, #ea580c);
+    animation: none;
+}

@@ -119,3 +119,26 @@
     direction: ltr !important;
     unicode-bidi: bidi-override;
 }
+
+/* Ensure sidebar titles handle math height gracefully */
+[data-toc-id] a {
+    display: flex;
+    align-items: center;
+    min-height: 2rem;
+    line-height: 1.4;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+/* Shrink Katex slightly in the sidebar to keep it from stretching lines */
+[data-toc-id] .katex {
+    font-size: 0.95em;
+}
+
+/* Smooth Chevron Rotation */
+.sidebar-chevron {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-chevron.open {
+    transform: rotate(90deg);
+}

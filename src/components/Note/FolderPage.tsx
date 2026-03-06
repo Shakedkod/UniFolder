@@ -1,4 +1,4 @@
-import { getFolderContents, getFriendlyName } from "@/lib/vault";
+import { getFolderContents, getFolderTitle, getFriendlyName } from "@/lib/vault";
 import ItemLink from "../NoteComponents/ItemLink";
 import BackButton from "../NoteComponents/BackButton";
 import { Folder } from "lucide-react";
@@ -7,7 +7,7 @@ export default async function FolderPage({ currentSlug, parentUrl, parentName }:
     const items = getFolderContents(currentSlug);
 
     const rawFolderName = decodeURIComponent(currentSlug[currentSlug.length - 1]);
-    const folderName = getFriendlyName(rawFolderName);
+    const folderName = getFolderTitle(decodeURIComponent(rawFolderName));
 
     // --- NEW: Group the items into 4 buckets ---
     const folders = items.filter(item => item.isDirectory);

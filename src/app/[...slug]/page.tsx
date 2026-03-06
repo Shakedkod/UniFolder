@@ -1,4 +1,4 @@
-import { isVaultDirectory, getFriendlyName } from '@/lib/vault';
+import { isVaultDirectory, getFolderTitle } from '@/lib/vault';
 import FolderPage from '@/components/Note/FolderPage';
 import NoteContent from '@/components/Note/NoteContent';
 
@@ -18,7 +18,7 @@ export default async function NotePage({ params }: { params: { slug: string[] } 
 
     // Get the name of the parent folder to display in the button (fallback to 'ראשי' / Main)
     const parentName = parentSlug.length > 0
-        ? getFriendlyName(decodeURIComponent(parentSlug[parentSlug.length - 1]))
+        ? getFolderTitle(decodeURIComponent(parentSlug[parentSlug.length - 1]))
         : 'תיקייה ראשית';
 
     // ==========================================

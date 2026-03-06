@@ -10,7 +10,7 @@ export interface TreeItem {
     children?: TreeItem[];
 }
 
-const FOLDER_DICTIONARY: Record<string, string> = {
+const SYSTEM_FOLDERS: Record<string, string> = {
     'university': 'אוניברסיטה',
     'physics': 'פיזיקה',
     'math': 'מתמטיקה',
@@ -54,14 +54,14 @@ export function getFriendlyName(slug: string): string {
 export function getFolderContents(slug: string[]) {
     const fullPath = path.join(VAULT_DIRECTORY, ...slug);
     if (!fs.existsSync(fullPath)) return [];
-    
+
     const items = fs.readdirSync(fullPath, { withFileTypes: true });
     return items
         // Filter out hidden files, system folders, and make sure we only read directories or our compiled .json files
         .filter(item => !item.name.startsWith('.') && item.name !== '_attachments' && (item.isDirectory() || item.name.endsWith('.json')))
         .map(item => {
             const isDir = item.isDirectory();
-            
+
             // Strip ONLY the .json extension to build the clean URL (e.g., "hw2q2.c.json" -> "hw2q2.c")
             const cleanName = item.name.replace(/\.json$/, '');
 
@@ -70,16 +70,16 @@ export function getFolderContents(slug: string[]) {
 
             if (isDir) {
                 // 1. If it's a folder, use our JSON dictionary
-                displayName = getFriendlyName(cleanName);
+                displayName = getFolderTitle(cleanName);
             } else if (item.name.endsWith('.json')) {
                 // 2. If it's a file, peek inside our pre-compiled JSON for the real title!
                 try {
                     const filePath = path.join(fullPath, item.name);
                     const fileContents = fs.readFileSync(filePath, 'utf8');
-                    
+
                     // Native JSON parsing is incredibly fast compared to parsing Markdown frontmatter!
-                    const compiledData = JSON.parse(fileContents); 
-                    
+                    const compiledData = JSON.parse(fileContents);
+
                     if (compiledData.title) {
                         displayName = compiledData.title;
                     }
@@ -87,9 +87,9 @@ export function getFolderContents(slug: string[]) {
                     console.error(`Failed to read JSON for ${item.name}`, err);
                 }
             }
-            
+
             return {
-                name: cleanName, 
+                name: cleanName,
                 displayName: displayName,
                 isDirectory: isDir,
                 // Build the URL path for the Next.js Link component (Preserves the .md or .c extensions!)
@@ -110,7 +110,7 @@ function getAllFilesRecursively(dir: string, fileList: string[] = []): string[] 
 
     for (const file of files) {
         const absolutePath = path.join(dir, file);
-        
+
         // Skip hidden folders like .obsidian or .git
         if (file.startsWith('.')) continue;
 
@@ -130,11 +130,11 @@ export function getAllNoteSlugs() {
     }
 
     const files = getAllFilesRecursively(VAULT_DIRECTORY);
-    
+
     return files.map((file) => {
         // Remove the base vault path and the .md extension
         const relativePath = file.replace(VAULT_DIRECTORY, '').replace(/\.md$/, '');
-        
+
         // Split by directory separator to create the slug array Next.js expects
         // Remove empty strings caused by leading slashes
         return relativePath.split(path.sep).filter(Boolean);
@@ -143,7 +143,7 @@ export function getAllNoteSlugs() {
 
 export function getNoteContent(slugArray: string[]) {
     const filePath = path.join(VAULT_DIRECTORY, ...slugArray);
-    
+
     // 1. Try reading the exact file first (e.g., "hw1.c" or "script.py")
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
         return fs.readFileSync(filePath, 'utf8');
@@ -160,17 +160,15 @@ export function getNoteContent(slugArray: string[]) {
 
 let dynamicFolderMap: Record<string, string> = {};
 
-export function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/'): TreeItem[] {
+export function getVaultTree(dir: string = VAULT_DIRECTORY, currentPath: string = ''): TreeItem[] {
     if (!fs.existsSync(dir)) return [];
 
-    // --- NEW: Load the auto-generated folder map ---
+    // 1. Load the auto-generated folder map created by your sync script!
     if (Object.keys(dynamicFolderMap).length === 0) {
         try {
             const mapPath = path.join(VAULT_DIRECTORY, 'folder-map.json');
             if (fs.existsSync(mapPath)) {
                 dynamicFolderMap = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
-            } else {
-                dynamicFolderMap = {};
             }
         } catch {
             dynamicFolderMap = {};
@@ -178,52 +176,51 @@ export function getVaultTree(dir = VAULT_DIRECTORY, currentPath = '/'): TreeItem
     }
 
     const entries = fs.readdirSync(dir, { withFileTypes: true });
-    const tree: TreeItem[] = [];
+    const tree = [];
 
     for (const entry of entries) {
-        if (entry.name.startsWith('.')) continue;
-        
-        // --- NEW: Hide the system mapping file from the TOC ---
-        if (entry.name === 'folder-map.json') continue; 
+        if (entry.name.startsWith('.') || entry.name === 'folder-map.json' || entry.name === 'link-map.json') continue;
 
         const fullPath = path.join(dir, entry.name);
-        const slug = entry.name.replace(/\.md$/, '');
+        const slug = entry.name.replace(/\.json$/, '').replace(/\.md$/, '');
         const itemPath = `${currentPath}/${slug}`;
 
         if (entry.isDirectory()) {
             const children = getVaultTree(fullPath, itemPath);
-            
             if (children.length > 0) {
                 tree.push({
                     name: entry.name,
-                    // --- NEW: Check the dynamic map before falling back to the raw name ---
-                    title: FOLDER_DICTIONARY[entry.name] || dynamicFolderMap[entry.name] || entry.name.replace(/-/g, ' '),
+                    // MAGIC HAPPENS HERE: It automatically looks up the Hebrew name from the sync map!
+                    title: SYSTEM_FOLDERS[entry.name] || dynamicFolderMap[entry.name] || entry.name.replace(/-/g, ' '),
                     path: itemPath,
                     isDirectory: true,
+                    fullPath: fullPath,
                     children: children
                 });
             }
-        } else if (entry.name.endsWith('.md')) {
-            const content = fs.readFileSync(fullPath, 'utf8');
-            const { data } = matter(content);
-            
+        } else if (entry.name.endsWith('.json')) {
+            let title = slug.replace(/-/g, ' ');
+
+            try {
+                const parsed = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+                if (parsed.title) title = parsed.title;
+            } catch (e) { }
+
             tree.push({
                 name: slug,
-                title: data.title || slug,
+                title: title,
                 path: itemPath,
+                fullPath: fullPath,
                 isDirectory: false
             });
         }
     }
 
-    // Sort the tree
     return tree.sort((a, b) => {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
-        
         const numA = parseInt(a.name.match(/^\d+/)?.[0] || '0');
         const numB = parseInt(b.name.match(/^\d+/)?.[0] || '0');
-        
         if (numA !== numB) return numA - numB;
         return a.title.localeCompare(b.title, 'he');
     });
@@ -240,7 +237,8 @@ export function getSlugToPathMap(): Record<string, string> {
             } else if (!item.isDirectory) {
                 // PRIMARY: Map the full, unique Hebrew title
                 map[item.title] = item.path;
-                
+                map[item.title] = item.path;
+
                 // FALLBACK: Also map the English slug just in case
                 // We use an IF statement so we don't accidentally overwrite an earlier file
                 if (!map[item.name]) {
@@ -260,7 +258,7 @@ export function getCourseContext(rawPath: string) {
     const allTheParts = decodedPath.split('/').filter(Boolean);
     // cut the last item which is the file name, we only want the folders for context
     const parts = allTheParts.slice(0, -1);
-    
+
     // 2. Define generic folders to skip
     const genericFolders = ['שיעורי בית', 'תרגול', 'notes', 'vault', 'tutorials'];
 
@@ -274,4 +272,20 @@ export function getCourseContext(rawPath: string) {
     // 4. Translate and clean (Removes Technion code like 01040031)
     let name = getFriendlyName(contextFolder);
     return name.replace(/^\d{8}\s*-\s*/, '');
+}
+
+export function getFolderTitle(slug: string): string {
+    // Ensure the map is loaded
+    if (Object.keys(dynamicFolderMap).length === 0) {
+        try {
+            const mapPath = path.join(VAULT_DIRECTORY, 'folder-map.json');
+            if (fs.existsSync(mapPath)) {
+                const freshMap = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+                if (freshMap[slug]) return freshMap[slug];
+            }
+        } catch { }
+    }
+
+    // Return the Hebrew name, or fallback to a cleaned up version of the slug
+    return SYSTEM_FOLDERS[slug] || dynamicFolderMap[slug] || slug.replace(/-/g, ' ');
 }

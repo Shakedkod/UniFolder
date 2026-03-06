@@ -2,11 +2,16 @@ import fs from "fs";
 import path from "path";
 import { notFound } from "next/navigation";
 import Sidebar from "../Sidebar";
-import Loading from "@/components/Note/loading";
-import { Suspense } from "react";
+import Loading from "@/app/[...slug]/loading";
+import { cache, Suspense } from "react";
 import DesmosInitializer from "../DesmosInitializer";
 import InteractiveArticle from "./InteractiveArticle";
 import { VAULT_DIRECTORY } from "@/lib/vault";
+
+const getCompiledData = cache((filePath: string) => {
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(fileContents);
+});
 
 export default async function NoteContent({ currentSlug, parentUrl, parentName }: { currentSlug: string[]; parentUrl: string; parentName: string }) {
     const rawFilename = decodeURIComponent(currentSlug[currentSlug.length - 1]);
@@ -15,8 +20,7 @@ export default async function NoteContent({ currentSlug, parentUrl, parentName }
     
     let compiledData;
     try {
-        const fileContents = fs.readFileSync(filePath, 'utf8');
-        compiledData = JSON.parse(fileContents);
+        compiledData = getCompiledData(filePath);
     } catch (e) {
         notFound();
     }

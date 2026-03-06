@@ -12,7 +12,10 @@ import remarkBreaks from 'remark-breaks';
 import { visit } from 'unist-util-visit';
 import { instance } from '@viz-js/viz';
 import rehypeHighlight from 'rehype-highlight';
-import { getSlugToPathMap } from './vault';
+import GithubSlugger from 'github-slugger';
+import fs from 'fs';
+import path from 'path';
+import { VAULT_DIRECTORY } from './vault';
 
 // Move your IconMap here!
 const IconMap: Record<string, string> = {
@@ -23,13 +26,26 @@ const IconMap: Record<string, string> = {
 const extractTOCPlugin = () => (tree: any, file: any) => {
     file.data.toc = [];
     let currentHeading: any = null;
+    const slugger = new GithubSlugger();
 
     visit(tree, 'element', (node: any) => {
         // A. Detect Headings
         if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(node.tagName)) {
             const id = node.properties?.id;
             let title = '';
-            visit(node, 'text', (textNode: any) => { title += textNode.value; });
+            
+            node.children.forEach((child: any) => {
+                if (child.type === 'text') {
+                    title += child.value;
+                } else if (child.type === 'inlineMath') {
+                    // Wrap math in $ so RenderMD knows how to handle it
+                    title += `$${child.value}$`;
+                } else if (child.tagName === 'span' && child.properties?.className?.includes('katex')) {
+                    // If Katex already processed it, try to find the original math source
+                    const annotation = child.children?.find((c: any) => c.tagName === 'annotation');
+                    if (annotation) title += `$${annotation.children[0].value}$`;
+                }
+            });
 
             if (id && title) {
                 currentHeading = {
@@ -43,23 +59,37 @@ const extractTOCPlugin = () => (tree: any, file: any) => {
         }
 
         // B. Detect Callouts (Safely checks the data-callout attribute)
-        else if (node.tagName === 'details' && node.properties?.['data-callout']) {
+        else if (node.tagName === 'div' && node.properties?.['data-callout']) {
             if (currentHeading) {
                 const calloutType = node.properties['data-callout'];
 
-                let title = '';
-                const summary = node.children.find((c: any) => c.tagName === 'summary');
-                if (summary) {
-                    visit(summary, 'text', (textNode: any) => { title += textNode.value; });
-                    const id = summary.properties?.id;
+                // Only index academic callouts (skip standard 'note', 'info', or 'warning')
+                const mathTypes = ['theorem', 'axiom', 'definition', 'claim', 'lemma', 'corollary', 'example', 'exercise', 'hypothesis'];
+                if (!mathTypes.includes(calloutType)) return;
 
-                    if (id && title) {
-                        currentHeading.callouts.push({
-                            id,
-                            title: title.trim(),
-                            type: calloutType
-                        });
+                let title = '';
+                // Search children for the title wrapper we built earlier
+                visit(node, 'element', (child: any) => {
+                    if (child.properties?.className?.includes('callout-title-inner')) {
+                        visit(child, 'text', (textNode: any) => { title += textNode.value; });
                     }
+                });
+
+                if (title) {
+                    title = title.trim();
+
+                    // 1. Generate a clean ID for the callout (e.g., "משפט-1")
+                    const calloutId = slugger.slug(title);
+
+                    // 2. INJECT the ID directly into the HTML node so the browser can scroll to it!
+                    node.properties.id = calloutId;
+
+                    // 3. Save it to our TOC array
+                    currentHeading.callouts.push({
+                        id: calloutId,
+                        title: title,
+                        type: calloutType
+                    });
                 }
             }
         }
@@ -93,13 +123,6 @@ const remarkGraphviz = () => async (tree: any) => {
             </div>`;
         }
     }
-};
-
-const parseMathInTitle = (title: string) => {
-    // This regex finds $math$ and wraps it in a span that KaTeX will definitely see
-    return title.replace(/\$(.*?)\$/g, (_, math) => {
-        return `<span class="inline-math">$${math}$</span>`;
-    });
 };
 
 // The Advanced Callout Transformer Plugin
@@ -277,7 +300,14 @@ export async function renderMarkdownContent(markdownContent: string) {
         chapterPrefix = parseInt(titleMatch[1], 10) + '.';
     }
 
-    const slugMap = getSlugToPathMap();
+    let masterLinkMap: Record<string, string> = {};
+    try {
+        const mapPath = path.join(VAULT_DIRECTORY, 'link-map.json');
+        masterLinkMap = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+    } catch (e) { }
+
+    var chapterPrefix = "";
+
     const linkMap = new Map<string, string>();
     let linkCounter = 0;
 
@@ -327,12 +357,10 @@ export async function renderMarkdownContent(markdownContent: string) {
             return `&#8203;<img src="${safeUrl}"${widthAttr}${heightAttr} ${styles} class="obsidian-image" alt="${cleanFilename}" loading="lazy" />`;
         })
         .replace(/(?<!\!)\[\[(.*?)\]\]/g, (match, linkContent) => {
-            // 1. Extract the title and target
             const parts = linkContent.replace(/\\\|/g, '|').split('|');
             let target = parts[0];
             const title = parts[1] || target.split(/[/\\]/).pop();
 
-            // 2. Separate the file name from the #hash
             let baseFile = target;
             let hash = '';
             const hashIndex = target.indexOf('#');
@@ -343,11 +371,23 @@ export async function renderMarkdownContent(markdownContent: string) {
 
             baseFile = baseFile.split(/[/\\]/).pop() || '';
 
-            // 3. Build the HTML link
-            const fullPath = (!baseFile) ? '' : (slugMap[baseFile] || `/${baseFile}`);
-            const linkHtml = `<a href="${fullPath}${hash}">${title}</a>`;
+            // Ignore empty links (like internal section jumps [[#^equation]])
+            if (!baseFile) {
+                const emptyLinkHtml = `<a href="${hash}" class="theme-link">${title}</a>`;
+                const placeholder = `OBSIDIANLINK${linkCounter++}X`;
+                linkMap.set(placeholder, emptyLinkHtml);
+                return placeholder;
+            }
 
-            // 4. Save to memory and return the alphanumeric placeholder
+            // Look up the exact Hebrew name in the Master Map!
+            let fullPath = masterLinkMap[baseFile];
+
+            if (!fullPath) {
+                console.log(`❌ LINK FAILED: Could not find "${baseFile}" in link-map.json!`);
+                fullPath = `/${baseFile}`; // Fallback
+            }
+
+            const linkHtml = `<a href="${fullPath}${hash}" class="theme-link">${title}</a>`;
             const placeholder = `OBSIDIANLINK${linkCounter++}X`;
             linkMap.set(placeholder, linkHtml);
 
