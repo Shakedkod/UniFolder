@@ -1,7 +1,7 @@
 "use client";
 
 import { TocItem } from "@/lib/toc";
-import { useEffect, useState, useRef, ReactNode } from "react";
+import { useEffect, useState, useRef, ReactNode, useCallback } from "react";
 // 1. Added new icons for the callout types and dropdowns!
 import { ArrowRight, Menu, X, ChevronDown, ChevronLeft, BookOpen, Bookmark, Lightbulb, PenTool, FileText, GraduationCap } from "lucide-react";
 import Link from "next/link";
@@ -61,10 +61,28 @@ function JustArrowBackButton({ url }: { url: string; }) {
     );
 }
 
+function useIsDesktop() {
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        // Function to update the state based on window width
+        const checkWidth = () => {
+            setIsDesktop(window.innerWidth >= 1280); // 1280px is Tailwind's 'xl' breakpoint
+        };
+
+        checkWidth(); // Check immediately on mount
+        window.addEventListener("resize", checkWidth);
+        return () => window.removeEventListener("resize", checkWidth);
+    }, []);
+
+    return isDesktop;
+}
+
 // ==========================================
 // Reusable Fading Scroll Container
 // ==========================================
 function FadingScrollContainer({ children, activeHeadingId }: { children: ReactNode, activeHeadingId: string }) {
+    const isDesktop = useIsDesktop();
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(true);
@@ -72,7 +90,7 @@ function FadingScrollContainer({ children, activeHeadingId }: { children: ReactN
     const checkScroll = () => {
         if (!scrollRef.current) return;
         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-        
+
         setCanScrollUp(scrollTop > 0);
         setCanScrollDown(Math.ceil(scrollTop + clientHeight) < scrollHeight - 2);
     };
@@ -85,15 +103,15 @@ function FadingScrollContainer({ children, activeHeadingId }: { children: ReactN
 
     useEffect(() => {
         if (!activeHeadingId || !scrollRef.current) return;
-        
+
         const container = scrollRef.current;
         const activeEl = container.querySelector(`[data-toc-id="${activeHeadingId}"]`) as HTMLElement;
-        
+
         if (activeEl) {
             const containerHeight = container.clientHeight;
             const elementTop = activeEl.offsetTop;
             const elementHeight = activeEl.clientHeight;
-            
+
             container.scrollTo({
                 top: elementTop - (containerHeight / 2) + (elementHeight / 2),
                 behavior: "smooth"
@@ -114,9 +132,43 @@ function FadingScrollContainer({ children, activeHeadingId }: { children: ReactN
 // ==========================================
 
 export default function Sidebar({ content }: { content: NavigatorContent }) {
+    const isDesktop = useIsDesktop();
     const [activeId, setActiveId] = useState<string>("");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [manualToggleState, setManualToggleState] = useState<Record<string, boolean>>({});
+
+    // --- RESIZE LOGIC ---
+    const [sidebarWidth, setSidebarWidth] = useState(350); // Default width in px
+    const isResizing = useRef(false);
+    const stopResizing = useCallback(() => {
+        isResizing.current = false;
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", stopResizing);
+        document.body.style.cursor = "default";
+        document.body.style.userSelect = "auto";
+    }, []);
+
+    const handleMouseMove = useCallback((mouseMoveEvent: MouseEvent) => {
+        if (!isResizing.current) return;
+
+        // Since you are in RTL (dir="rtl"), we calculate from the right edge
+        const newWidth = window.innerWidth - mouseMoveEvent.clientX;
+
+        // Set constraints (min 250px, max 600px)
+        if (newWidth > 250 && newWidth < 600) {
+            setSidebarWidth(newWidth);
+        }
+    }, []);
+
+    const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
+        isResizing.current = true;
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", stopResizing);
+
+        // Global feedback
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+    }, [handleMouseMove, stopResizing]);
 
     useEffect(() => {
         const headingIds = content.toc?.map((item) => item.id) || [];
@@ -129,7 +181,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
                     }
                 });
             },
-            { rootMargin: "-10% 0px -80% 0px" } 
+            { rootMargin: "-10% 0px -80% 0px" }
         );
 
         headingIds.forEach((id) => {
@@ -148,11 +200,11 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
     const toggleGroup = (e: React.MouseEvent, id: string) => {
         e.preventDefault();
         e.stopPropagation();
-        
+
         setManualToggleState((prev) => {
             // Determine if it looks open or closed right now
             const isCurrentlyExpanded = prev[id] !== undefined ? prev[id] : (activeHeadingId === id);
-            
+
             return {
                 ...prev,
                 [id]: !isCurrentlyExpanded // Flip it and save the manual override
@@ -171,22 +223,21 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
             {content.toc?.map((item: TocItem) => {
                 const isSectionActive = activeHeadingId === item.id;
                 const hasCallouts = item.callouts && item.callouts.length > 0;
-                const isExpanded = manualToggleState[item.id] !== undefined 
-                    ? manualToggleState[item.id] 
+                const isExpanded = manualToggleState[item.id] !== undefined
+                    ? manualToggleState[item.id]
                     : isSectionActive;
 
                 return (
-                    <li 
-                        key={item.id} 
-                        data-toc-id={item.id} 
-                        className="my-1 flex flex-col relative" 
+                    <li
+                        key={item.id}
+                        data-toc-id={item.id}
+                        className="my-1 flex flex-col relative"
                         style={{ paddingRight: `${(item.level - 1) * 1.25}rem` }}
                     >
                         {/* THE WRAPPER: Now a flex row to hold the title and the dropdown button */}
-                        <div className={`transition-all duration-200 flex items-center justify-between border-r-2 ${
-                            isSectionActive
-                                ? "text-highlight bg-highlight/10 border-highlight font-bold"
-                                : "border-transparent hover:text-accent2-foreground hover:bg-foreground/5"
+                        <div className={`transition-all duration-200 flex items-center justify-between border-r-2 ${isSectionActive
+                            ? "text-highlight bg-highlight/10 border-highlight font-bold"
+                            : "border-transparent hover:text-accent2-foreground hover:bg-foreground/5"
                             } ${levelStyles[item.level] || "text-sm pr-2"}`}
                         >
                             <a
@@ -218,11 +269,10 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
                                         <a
                                             href={`#${callout.id}`}
                                             onClick={() => setIsMenuOpen(false)}
-                                            className={`transition-all duration-200 flex items-center py-1.5 pr-2 text-[11px] font-medium rounded-l-md ${
-                                                activeId === callout.id
-                                                    ? "text-highlight bg-highlight/10"
-                                                    : "text-foreground-heading-sidebar-5 hover:text-accent2-foreground hover:bg-foreground/5"
-                                            }`}
+                                            className={`transition-all duration-200 flex items-center py-1.5 pr-2 text-[11px] font-medium rounded-l-md ${activeId === callout.id
+                                                ? "text-highlight bg-highlight/10"
+                                                : "text-foreground-heading-sidebar-5 hover:text-accent2-foreground hover:bg-foreground/5"
+                                                }`}
                                         >
                                             {/* Render the specific icon for this callout type */}
                                             {getCalloutIcon(callout.type)}
@@ -240,10 +290,30 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
 
     return (<>
         {/* ---------------------- DESKTOP SIDEBAR ---------------------- */}
-        <div
-            className="hidden xl:flex min-w-sm max-w-[20rem] w-full h-screen p-4 lg:p-10 flex-col justify-between sticky top-0 bg-accent2-background border-l border-accent2-border shadow-lg"
+        <aside
+            className={`hidden xl:flex h-screen p-4 lg:p-10 flex-col justify-between sticky top-0 bg-accent2-background border-l border-accent2-border shadow-lg z-40`}
             dir="rtl"
+            style={{
+                // @ts-ignore
+                "--dynamic-width": `${sidebarWidth}px`,
+                width: "var(--dynamic-width, 350px)",
+                minWidth: "var(--dynamic-width, 350px)"
+            }}
         >
+            {/* THE RESIZE HANDLE: A thin invisible line on the left edge (because of RTL) */}
+            <div
+                onMouseDown={startResizing}
+                className="absolute top-0 left-0 w-1 h-full cursor-col-resize group z-50"
+            >
+                {/* Visual indicator line */}
+                <div className="absolute inset-y-0 left-0 w-[2px] bg-transparent group-hover:bg-highlight/40 transition-colors duration-200" />
+
+                {/* Optional: Central "Grabber" dots for extra clarity */}
+                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-4 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-[2px] h-4 bg-highlight/60 rounded-full" />
+                </div>
+            </div>
+
             <div className="w-full shrink-0">
                 <BackButton url={content.parent.url} name={content.parent.name} />
                 <a href="#" className="w-full block mt-2">
@@ -261,7 +331,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
             <div className="w-full shrink-0 pt-6 mt-2 border-t border-accent2-border">
                 <ThemeMenu />
             </div>
-        </div>
+        </aside>
 
         {/* ---------------------- TABLET TOPBAR ---------------------- */}
         <div className="hidden sm:flex xl:hidden w-full h-16 bg-accent2-background border-b border-accent2-border shadow-lg flex-row items-center justify-between px-4 sticky top-0 z-50" dir="rtl">
@@ -286,36 +356,38 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
             />
         )}
 
-        <div
-            className={`fixed top-0 right-0 h-full w-72 sm:w-80 bg-accent2-background shadow-2xl z-[60] transform transition-transform duration-300 xl:hidden flex flex-col ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
-            dir="rtl"
-        >
-            <div className="p-6 flex flex-col h-full">
-                <div className="shrink-0 mb-2">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold text-accent2-foreground">ניווט</h2>
-                        <button
-                            onClick={() => setIsMenuOpen(false)}
-                            className="hidden sm:flex p-2 text-button-border hover:text-button-hover-bg bg-background/5 hover:bg-background/10 rounded-lg transition-colors"
-                        >
-                            <X size={20} />
-                        </button>
-                        <div className="sm:hidden">
-                            <JustArrowBackButton url={content.parent.url} />
+        {isMenuOpen && (
+            <div
+                className={`fixed top-0 right-0 h-full w-72 sm:w-80 bg-accent2-background shadow-2xl z-[60] transform transition-transform duration-300 xl:hidden flex flex-col ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                dir="rtl"
+            >
+                <div className="p-6 flex flex-col h-full">
+                    <div className="shrink-0 mb-2">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-accent2-foreground">ניווט</h2>
+                            <button
+                                onClick={() => setIsMenuOpen(false)}
+                                className="hidden sm:flex p-2 text-button-border hover:text-button-hover-bg bg-background/5 hover:bg-background/10 rounded-lg transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                            <div className="sm:hidden">
+                                <JustArrowBackButton url={content.parent.url} />
+                            </div>
                         </div>
+                        <SearchBar size={1} />
                     </div>
-                    <SearchBar size={1} />
-                </div>
 
-                <FadingScrollContainer activeHeadingId={activeId}>
-                    {contentList}
-                </FadingScrollContainer>
-                
-                <div className="w-full shrink-0 pt-4 mt-2 border-t border-foreground/10">
-                    <ThemeMenu />
+                    <FadingScrollContainer activeHeadingId={activeId}>
+                        {contentList}
+                    </FadingScrollContainer>
+
+                    <div className="w-full shrink-0 pt-4 mt-2 border-t border-foreground/10">
+                        <ThemeMenu />
+                    </div>
                 </div>
             </div>
-        </div>
+        )}
 
         {/* ---------------------- PHONE FLOATING BUTTON ---------------------- */}
         <button

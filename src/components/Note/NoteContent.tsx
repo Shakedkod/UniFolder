@@ -17,7 +17,7 @@ export default async function NoteContent({ currentSlug, parentUrl, parentName }
     const rawFilename = decodeURIComponent(currentSlug[currentSlug.length - 1]);
     const jsonFilename = rawFilename + ".json";
     const filePath = path.join(VAULT_DIRECTORY, ...currentSlug.slice(0, -1), jsonFilename);
-    
+
     let compiledData;
     try {
         compiledData = getCompiledData(filePath);
@@ -28,23 +28,19 @@ export default async function NoteContent({ currentSlug, parentUrl, parentName }
     const { title, isCodeFile, toc, html } = compiledData;
 
     return (
-        <main className={`flex flex-col xl:flex-row w-full h-full xl:grid xl:grid-cols-[auto_1fr] no-scrollbar`}>
-            <div className="sticky top-0 z-50 w-full xl:w-auto">
-                <Sidebar content={{ title, toc, parent: { url: parentUrl, name: parentName } }} />
-            </div>
+        <main className="flex flex-col xl:flex-row items-start w-full min-h-screen relative">
+            <Sidebar content={{ title, toc, parent: { url: parentUrl, name: parentName } }} />
 
-            <Suspense fallback={<Loading />}>
-                <div className="flex flex-col w-full px-8 py-6" dir="rtl">
-                    {/* Add the filename as a header for code files */}
+            <div className="flex-1 min-w-0 px-8 py-6 w-full" dir="rtl">
+                <Suspense fallback={<Loading />}>
                     {isCodeFile && (
                         <h1 className="text-3xl font-bold mb-6 text-foreground text-left" dir="ltr">
                             {rawFilename}
                         </h1>
                     )}
-
                     <InteractiveArticle html={html} isCodeFile={!!isCodeFile} />
-                </div>
-            </Suspense>
+                </Suspense>
+            </div>
 
             <DesmosInitializer />
         </main>
