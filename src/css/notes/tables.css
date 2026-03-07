@@ -1,21 +1,38 @@
-/* 1. Base table styling for a clean academic look */
-.academic-preview table {
+/* Responsive Table Container */
+/* 1. The Container MUST be the boss of the width */
+.table-container {
     width: 100%;
-    margin: 2rem 0;
-    border-collapse: collapse;
-    background-color: var(--table-background);
-    border: 1px solid var(--table-border);
+    max-width: 100%; /* Prevents the container itself from expanding */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 2rem 0; /* Move the margin from the table to the container */
     border-radius: 8px;
-    overflow: hidden;
+    border: 1px solid var(--table-border); /* Move border here for a clean look */
+    background-color: var(--table-background);
 }
 
-/* 2. Style the header row */
-.academic-preview th {
-    background-color: var(--table-header-bg);
-    color: var(--table-header-text);
+/* 2. Update the table inside the preview */
+.academic-preview table {
+    width: auto; /* ALLOW the table to be wider than the screen */
+    min-width: 100%; /* But ensure it fills the container if the content is small */
+    margin: 0; /* Remove margin here, the container has it now */
+    border-collapse: collapse;
+    border: none; /* Border is now on the container */
+}
+
+/* 3. Keep your cell styling */
+.academic-preview th, 
+.academic-preview td {
     padding: 12px;
-    font-weight: 600;
-    border-bottom: 2px solid var(--table-header-border);
+    text-align: center;
+    border-bottom: 1px solid var(--table-cell-border);
+    white-space: nowrap; /* Prevents text from wrapping inside cells, forcing the scroll */
+}
+
+/* 4. Fix KaTeX behavior inside tables */
+.table-container .katex-display {
+    margin: 0.5em 0;
+    display: inline-block; /* Helps prevent the 'vertical ghosting' in some browsers */
 }
 
 /* 3. THE ZEBRA STRIPING */
@@ -27,10 +44,4 @@
 /* 4. Optional: Highlight row on hover to help focus */
 .academic-preview tr:hover {
     background-color: var(--table-row-hover-bg); /* Slight orange glow on hover */
-}
-
-.academic-preview td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--table-cell-border);
-    text-align: center;
 }

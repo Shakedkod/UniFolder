@@ -5,6 +5,7 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 100px; /* Adjust this based on your top-bar height */
+  overflow-x: hidden;
 }
 
 @theme {

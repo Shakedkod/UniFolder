@@ -16,6 +16,7 @@ import GithubSlugger from 'github-slugger';
 import fs from 'fs';
 import path from 'path';
 import { VAULT_DIRECTORY } from './vault';
+import katex from 'katex';
 
 // Move your IconMap here!
 const IconMap: Record<string, string> = {
@@ -33,7 +34,7 @@ const extractTOCPlugin = () => (tree: any, file: any) => {
         if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(node.tagName)) {
             const id = node.properties?.id;
             let title = '';
-            
+
             node.children.forEach((child: any) => {
                 if (child.type === 'text') {
                     title += child.value;
@@ -311,7 +312,43 @@ export async function renderMarkdownContent(markdownContent: string) {
     const linkMap = new Map<string, string>();
     let linkCounter = 0;
 
-    var processedContent = markdownContent
+    const mathCellMap = new Map<string, string>();
+    let mathCellCounter = 0;
+
+    const preRenderTableMath = (content: string): string => {
+        return content.split('\n').map(line => {
+            if (!line.trim().startsWith('|')) return line;
+
+            return line.replace(/\$([^$]+)\$/g, (match, mathContent) => {
+                try {
+                    const fixed = mathContent.replace(/\\\|/g, '|');
+                    const rendered = katex.renderToString(fixed, {
+                        throwOnError: false,
+                        trust: true,
+                        strict: 'ignore',
+                        macros: {
+                            "\\R": "\\htmlStyle{direction: rtl; unicode-bidi: isolate; display: inline-block;}{\\text{#1}}",
+                            "\\underbracket": "\\mathop{\\htmlClass{sq-bracket}{#1\\rule[-0.4em]{0pt}{0pt}}}\\limits",
+                            "\\overbracket": "\\mathop{\\htmlClass{sq-overbracket}{\\rule{0pt}{1.3em}#1}}\\limits",
+                            "\\overunderset": "\\overset{#1}{\\underset{#2}{#3}}",
+                            "\\cancel": "\\htmlClass{math-cancel}{#1}",
+                            "\\bcancel": "\\htmlClass{math-bcancel}{#1}",
+                            "\\xcancel": "\\htmlClass{math-xcancel}{#1}",
+                            "\\cases": "\\begin{cases} #1 \\end{cases}",
+                            "\\uptau": "\\tau",
+                        }
+                    });
+                    const key = `PRETABLE${mathCellCounter++}END`;
+                    mathCellMap.set(key, rendered);
+                    return key;
+                } catch {
+                    return match;
+                }
+            });
+        }).join('\n');
+    };
+
+    var processedContent = preRenderTableMath(markdownContent)
         .replace(/\u00a0/g, ' ')
         .replace(/^\|[ \t]*:?-+:?[ \t]*(?=\|)/gm, (match) => match.replace(/[ \t]/g, ''))
         .replace(/^([ \t]*(?:>[ \t]*)*)\$\$(.+?)\$\$[ \t]*$/gm, (match, prefix, equation) => `${prefix}$$\n${prefix}${equation.trim()}\n${prefix}$$`)
@@ -412,8 +449,8 @@ export async function renderMarkdownContent(markdownContent: string) {
             .use(remarkBreaks)
             .use(remarkGraphviz)
             .use(remarkDesmos)
-            .use(remarkFrontmatter, ['yaml'])
             .use(remarkMath)
+            .use(remarkFrontmatter, ['yaml'])
             .use(remarkRehype, { allowDangerousHtml: true })
             .use(rehypeRaw)
             .use(rehypeHighlight)
@@ -443,6 +480,14 @@ export async function renderMarkdownContent(markdownContent: string) {
         for (const [placeholder, html] of linkMap.entries()) {
             contentHtml = contentHtml.split(placeholder).join(html);
         }
+
+        for (const [key, rendered] of mathCellMap.entries()) {
+            contentHtml = contentHtml.split(key).join(rendered);
+        }
+
+        contentHtml = contentHtml
+            .replace(/<table/g, '<div class="table-container"><table')
+            .replace(/<\/table>/g, '</table></div>');
 
         return {
             contentHtml: contentHtml,
