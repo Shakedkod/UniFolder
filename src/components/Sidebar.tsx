@@ -81,8 +81,7 @@ function useIsDesktop() {
 // ==========================================
 // Reusable Fading Scroll Container
 // ==========================================
-function FadingScrollContainer({ children, activeHeadingId }: { children: ReactNode, activeHeadingId: string }) {
-    const isDesktop = useIsDesktop();
+export function FadingScrollContainer({ children, activeHeadingId }: { children: ReactNode, activeHeadingId: string }) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(true);

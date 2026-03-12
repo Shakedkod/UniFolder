@@ -14,6 +14,12 @@ export type TocItem = {
     callouts: CalloutItem[];
 }
 
+export type PdfTocItem = {
+    title: string;
+    dest: any[];
+    items: PdfTocItem[];
+}
+
 export function extractTOC(markdownContent: string): TocItem[] {
     const slugger = new GithubSlugger();
     const toc: TocItem[] = [];
@@ -42,4 +48,14 @@ export function extractTOC(markdownContent: string): TocItem[] {
     }
 
     return toc;
+}
+
+export function flattenPdfToc(items: PdfTocItem[], level = 1): TocItem[] {
+    return items.flatMap(item => {
+        const pageNum = item.dest?.[0]?.num ?? 0;
+        return [
+            { title: item.title, slug: item.title, level, pageNum, id: item.title, callouts: [] },
+            ...flattenPdfToc(item.items ?? [], level + 1)   
+        ];
+    });
 }

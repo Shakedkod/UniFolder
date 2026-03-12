@@ -2,9 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 import matter from 'gray-matter';
-import GithubSlugger from 'github-slugger';
 import { renderMarkdownContent } from '@/lib/processor';
 import { VAULT_DIRECTORY } from '@/lib/vault';
+import { PDFParse } from 'pdf-parse';
 
 // CLOUD CONFIGURATION
 const GITHUB_PAT = process.env.GITHUB_PAT;
@@ -33,7 +33,8 @@ const HEBREW_MAP: { [key: string]: string } = {
 };
 
 const allowedExtensions: string[] = [
-    '.md', '.c', '.h', '.cpp', '.hpp',
+    '.md', ".pdf",
+    '.c', '.h', '.cpp', '.hpp',
     '.java', '.py', '.js', '.ts',
     '.sh', '.sql', '.json', '.yaml', '.yml'
 ];
@@ -90,7 +91,7 @@ function getVaultTree(dir: string = VAULT_DIRECTORY, currentPath: string = ''): 
         if (entry.name.startsWith('.') || entry.name === 'folder-map.json' || entry.name === 'link-map.json') continue;
 
         const fullPath = path.join(dir, entry.name);
-        const slug = entry.name.replace(/\.json$/, '').replace(/\.md$/, ''); 
+        const slug = entry.name.replace(/\.json$/, '').replace(/\.md$/, '');
         const itemPath = `${currentPath}/${slug}`;
 
         if (entry.isDirectory()) {
@@ -111,7 +112,7 @@ function getVaultTree(dir: string = VAULT_DIRECTORY, currentPath: string = ''): 
                 try {
                     const parsed = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
                     if (parsed.title) title = parsed.title;
-                } catch(e) {}
+                } catch (e) { }
             }
             tree.push({
                 name: slug,
@@ -139,6 +140,13 @@ function cleanMarkdown(text: string): string {
         .replace(/---[\s\S]*?---/g, '').replace(/\n/g, ' ').trim();
 }
 
+async function extractPdfText(filePath: string): Promise<{ text: string; toc: any[] }> {
+    const parser = new PDFParse({ url: filePath });
+    const data = await parser.getText();
+    const tocData = await parser.getInfo();
+    return { text: data.text, toc: tocData.outline || [] };
+}
+
 interface SearchIndexItem {
     title: string;
     path: string;
@@ -146,15 +154,17 @@ interface SearchIndexItem {
     excerpt: string;
     priority: number;
 }
-
 function generateSearchIndex(vaultTree: VaultItem[]) {
     const index: SearchIndexItem[] = [];
 
     function traverse(items: VaultItem[]) {
         for (const item of items) {
-            if (item.isDirectory) {
+            if (item.isDirectory) 
+            {
                 if (item.children) traverse(item.children);
-            } else {
+            }
+            else 
+            {
                 try {
                     const parsed = JSON.parse(fs.readFileSync(item.fullPath, 'utf8'));
                     const content = parsed.html || '';
@@ -166,7 +176,7 @@ function generateSearchIndex(vaultTree: VaultItem[]) {
                         excerpt: cleanMarkdown(content.replace(/<[^>]*>?/gm, '').substring(0, 150) + "..."),
                         priority: 2
                     });
-                } catch(e) {}
+                } catch (e) { }
             }
         }
     }
@@ -178,10 +188,10 @@ function generateSearchIndex(vaultTree: VaultItem[]) {
 async function processVaultFile(rawContent: string, filename: string, title: string, extension: string, destPath: string) {
     const cleanExt = extension.startsWith('.') ? extension.substring(1) : extension;
     const codeExtensions: { [key: string]: string } = {
-        'c': 'c', 'h': 'c', 'cpp': 'cpp', 'hpp': 'cpp', 'java': 'java', 'py': 'python', 
+        'c': 'c', 'h': 'c', 'cpp': 'cpp', 'hpp': 'cpp', 'java': 'java', 'py': 'python',
         'js': 'javascript', 'ts': 'typescript', 'sh': 'bash', 'sql': 'sql', 'json': 'json', 'yaml': 'yaml', 'yml': 'yaml'
     };
-    
+
     const isCodeFile = !!codeExtensions[cleanExt];
     let markdownContent = rawContent;
 
@@ -195,8 +205,20 @@ async function processVaultFile(rawContent: string, filename: string, title: str
 
     const { contentHtml, toc } = await renderMarkdownContent(markdownContent);
 
-    const compiledData = { title, isCodeFile, toc, html: contentHtml };
+    const compiledData = { title, type: isCodeFile ? "code" : "md", toc, html: contentHtml };
     fs.writeFileSync(path.join(destPath, filename + ".json"), JSON.stringify(compiledData));
+}
+
+async function processPDFFile(filePath: string, filename: string, title: string, destPath: string)
+{
+    const { text, toc } = await extractPdfText(filePath);
+    const jsonData = { 
+        title,
+        type: "pdf",
+        toc: toc,
+        text: text
+    };
+    fs.writeFileSync(path.join(destPath, filename + ".json"), JSON.stringify(jsonData));
 }
 
 const autoFolderMap: { [key: string]: string } = {};
@@ -239,18 +261,22 @@ async function passTwoCompileFiles(destDir: string) {
 
     for (const entry of entries) {
         if (
-            entry.name.startsWith('.') || 
-            entry.name === 'folder-map.json' || 
+            entry.name.startsWith('.') ||
+            entry.name === 'folder-map.json' ||
             entry.name === 'link-map.json'
         ) continue;
         const fullPath = path.join(destDir, entry.name);
 
         if (entry.isDirectory()) {
             await passTwoCompileFiles(fullPath);
+        } else if (entry.name.endsWith('.pdf')) {
+            const englishName = path.basename(entry.name, '.pdf');
+            const originalName = globalTitleMap[fullPath] || englishName;
+            await processPDFFile(fullPath, englishName, originalName, destDir);
         } else if (allowedExtensions.includes(path.extname(entry.name).toLowerCase())) {
             const ext = path.extname(entry.name).toLocaleLowerCase();
             const englishName = path.basename(entry.name, ext);
-            
+
             // Restore the Hebrew title from our Master Map!
             let originalName = globalTitleMap[fullPath] || englishName;
             const content = fs.readFileSync(fullPath, 'utf8');
@@ -279,7 +305,7 @@ function syncImages(srcDir: string) {
         const srcPath = path.join(srcDir, entry.name);
 
         if (entry.isDirectory()) {
-            syncImages(srcPath); 
+            syncImages(srcPath);
         } else {
             const ext = path.extname(entry.name).toLowerCase();
             if (['.png', '.jpg', '.jpeg', '.gif', '.svg'].includes(ext)) {

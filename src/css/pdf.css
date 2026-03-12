@@ -1,0 +1,24 @@
+.rpv-core__canvas-layer canvas {
+    image-rendering: high-quality;
+}
+
+.rpv-core__inner-container {
+    direction: ltr !important;
+}
+
+.rpv-core__inner-pages {
+    direction: ltr !important;
+}
+
+.rpv-default-layout__toolbar {
+    height: auto !important;
+}
+
+.rpv-core__inner-pages {
+    top: auto !important;
+}
+
+.rpv-default-layout__body {
+    top: 0 !important;
+    padding-top: 90px !important; /* adjust this to match your toolbar's actual height */
+}

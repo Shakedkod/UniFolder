@@ -22,6 +22,7 @@ const SYSTEM_FOLDERS: Record<string, string> = {
 };
 
 export const VAULT_DIRECTORY = path.join(process.cwd(), 'public', 'vault');
+export const LIVE_VAULT_URL = '/vault';
 
 export function isVaultDirectory(slug: string[]): boolean {
     const fullPath = path.join(VAULT_DIRECTORY, ...slug);
@@ -67,10 +68,12 @@ export function getFolderContents(slug: string[]) {
 
             // For display purposes, we might want to strip the .md as well so the sidebar just says "0 - הקדמה"
             let displayName = cleanName.replace(/\.md$/, '');
+            let type = "md";
 
             if (isDir) {
                 // 1. If it's a folder, use our JSON dictionary
                 displayName = getFolderTitle(cleanName);
+                type = "folder";
             } else if (item.name.endsWith('.json')) {
                 // 2. If it's a file, peek inside our pre-compiled JSON for the real title!
                 try {
@@ -83,6 +86,22 @@ export function getFolderContents(slug: string[]) {
                     if (compiledData.title) {
                         displayName = compiledData.title;
                     }
+                    if (compiledData.type)
+                    {
+                        switch (compiledData.type)
+                        {
+                            case "code":
+                            {
+                                type = "code";
+                                break;
+                            }
+                            case "pdf":
+                            {
+                                type = "pdf";
+                                break;
+                            }
+                        }
+                    }
                 } catch (err) {
                     console.error(`Failed to read JSON for ${item.name}`, err);
                 }
@@ -92,7 +111,7 @@ export function getFolderContents(slug: string[]) {
                 name: cleanName,
                 displayName: displayName,
                 isDirectory: isDir,
-                // Build the URL path for the Next.js Link component (Preserves the .md or .c extensions!)
+                type: type,
                 href: `/${slug.join('/')}/${cleanName}`
             };
         })

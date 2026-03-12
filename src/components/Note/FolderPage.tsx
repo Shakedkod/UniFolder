@@ -28,9 +28,11 @@ export default async function FolderPage({ currentSlug, parentUrl, parentName }:
     // Helper function so we don't repeat the grid code 3 times
     const renderGrid = (gridItems: typeof items) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {gridItems.map((item) => (
-                <ItemLink key={item.name} name={item.displayName} url={`/${[...currentSlug, item.name].map(encodeURIComponent).join('/')}`} isFolder={item.isDirectory} />
-            ))}
+            {gridItems.map((item) => {
+                return (
+                    <ItemLink key={item.name} name={item.displayName} type={item.type} url={`/${[...currentSlug, item.name].map(encodeURIComponent).join('/')}`} />
+                );
+            })}
         </div>
     );
 
