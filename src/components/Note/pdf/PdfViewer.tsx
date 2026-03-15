@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import '@react-pdf-viewer/core/lib/styles/index.css';
-import { RenderPageProps, TextDirection } from '@react-pdf-viewer/core';
+import { TextDirection } from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import {
@@ -16,11 +16,15 @@ import {
 } from 'lucide-react';
 import Link from "next/link";
 import { ThemeMenuCircleButton } from '@/components/ThemeMenu';
+import { useTheme } from '@/components/ThemeProvider';
 
 const btnStyle: React.CSSProperties = { cursor: 'pointer', padding: '4px 8px', display: 'flex', alignItems: 'center', color: 'white' };
+const darkThemes = ['dark', 'night', 'deep-ocean'];
 
-export default function PdfViewer({ pdfUrl, isDark, fileName, parent }: { pdfUrl: string; isDark: string; fileName: string; parent: { url: string; name: string; } }) {
+export default function PdfViewer({ pdfUrl, fileName, parent }: { pdfUrl: string; fileName: string; parent: { url: string; name: string; } }) {
     const [Component, setComponent] = useState<any>(null);
+    const theme = useTheme();
+    const isDark = darkThemes.includes(theme.activeTheme || '');
 
     const defaultLayoutPluginInstance = defaultLayoutPlugin({
         renderToolbar: (Toolbar: any) => (
@@ -52,8 +56,8 @@ export default function PdfViewer({ pdfUrl, isDark, fileName, parent }: { pdfUrl
                                         </button>
                                     )}
                                 </CurrentPageInput>
-                                <span style={{ padding: '0 4px', color: 'white' }}>/</span>
-                                {NumberOfPages()}
+                                <span style={{ padding: '0 4px', color: 'var(--accent2-foreground)' }}>/</span>
+                                <div className="text-accent2-foreground">{NumberOfPages()}</div>
                                 <div style={{ width: "10px" }}></div>
                                 <EnterFullScreen>
                                     {(props: any) => (
@@ -61,29 +65,31 @@ export default function PdfViewer({ pdfUrl, isDark, fileName, parent }: { pdfUrl
                                             style={btnStyle}
                                             onClick={props.onClick}
                                         >
-                                            <Maximize size={18} />
+                                            <Maximize size={18} className="text-accent2-foreground" />
                                         </button>
                                     )}
                                 </EnterFullScreen>
-                                <div style={{ display: 'flex', alignItems: 'center', backgroundColor: isDark ? '#333' : '#eee', borderRadius: '4px', margin: '0px 10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', backgroundColor: "var(--shadow-color)", borderRadius: '4px', margin: '0px 10px' }}>
                                     <ZoomOut>
                                         {(props: any) => (
                                             <button
                                                 style={btnStyle}
                                                 onClick={props.onClick}
                                             >
-                                                <ZoomOutIcon size={18} />
+                                                <ZoomOutIcon size={18} className="text-accent2-foreground" />
                                             </button>
                                         )}
                                     </ZoomOut>
-                                    <Zoom />
+                                    <div className="text-accent2-foreground">
+                                        {Zoom()}
+                                    </div>
                                     <ZoomIn>
                                         {(props: any) => (
                                             <button
                                                 style={btnStyle}
                                                 onClick={props.onClick}
                                             >
-                                                <ZoomInIcon size={18} />
+                                                <ZoomInIcon size={18} className="text-accent2-foreground" />
                                             </button>
                                         )}
                                     </ZoomIn>
@@ -94,7 +100,7 @@ export default function PdfViewer({ pdfUrl, isDark, fileName, parent }: { pdfUrl
                                             style={btnStyle}
                                             onClick={props.onClick}
                                         >
-                                            <SearchIcon size={18} />
+                                            <SearchIcon size={18} className="text-accent2-foreground" />
                                         </button>
                                     )}
                                 </ShowSearchPopover>
@@ -104,7 +110,7 @@ export default function PdfViewer({ pdfUrl, isDark, fileName, parent }: { pdfUrl
                                             style={btnStyle}
                                             onClick={props.onClick}
                                         >
-                                            <RotateCw size={18} />
+                                            <RotateCw size={18} className="text-accent2-foreground" />
                                         </button>
                                     )}
                                 </Rotate>
@@ -122,7 +128,7 @@ export default function PdfViewer({ pdfUrl, isDark, fileName, parent }: { pdfUrl
                                     style={{ cursor: 'pointer', padding: '0 8px', fontSize: '18px' }}
                                     title="Download"
                                 >
-                                    <DownloadIcon size={18} />
+                                    <DownloadIcon size={18} className="text-accent2-foreground" />
                                 </div>
                             </div>
                         </div>
@@ -130,8 +136,19 @@ export default function PdfViewer({ pdfUrl, isDark, fileName, parent }: { pdfUrl
                 }}
             </Toolbar>
         ),
-
     });
+
+    useEffect(() => {
+        const handleWheel = (e: WheelEvent) => {
+            if (e.ctrlKey) {
+                e.preventDefault(); // Stop the browser from zooming the whole page
+            }
+        };
+
+        // Attach to the viewer container specifically
+        window.addEventListener('wheel', handleWheel, { passive: false });
+        return () => window.removeEventListener('wheel', handleWheel);
+    }, []);
 
     useEffect(() => {
         // We import the libraries ONLY inside useEffect (browser-only)
@@ -149,11 +166,10 @@ export default function PdfViewer({ pdfUrl, isDark, fileName, parent }: { pdfUrl
     if (!Component) return <div className="p-10 text-center">טוען סביבת עבודה...</div>;
 
     const { Viewer, Worker } = Component;
-    console.log('Rendering PDF Viewer with URL:', pdfUrl);
 
     return (
         <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-            <div style={{ height: '100vh', width: '100%' }}>
+            <div style={{ height: '100vh', width: '100%' }} data-theme={isDark ? 'dark' : 'light'}>
                 <Viewer
                     fileUrl={pdfUrl}
                     theme={{
