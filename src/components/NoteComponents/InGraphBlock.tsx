@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useId, useMemo, useRef, useState, useEffect } from 'react';
-import type { GraphData, GraphTheme, GraphNode, GraphEdge, CircuitGate, CircuitWire, GraphGroup } from '@/lib/inGraphTypes';
+import React, { useId, useMemo, useRef } from 'react';
+import type { GraphData, GraphNode, GraphEdge, CircuitGate, CircuitWire, GraphGroup } from '@/lib/inGraphTypes';
 import {
     getEdgePathData, getGateShape, getPortPositions,
     getWirePath, getWireActive, simulateCircuit,
