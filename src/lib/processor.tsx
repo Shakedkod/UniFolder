@@ -17,7 +17,6 @@ import fs from 'fs';
 import path from 'path';
 import {VAULT_DIRECTORY} from './vault';
 import katex from 'katex';
-import {renderGraphToSVG} from "@/components/NoteComponents/InGraphBlock";
 
 // Move your IconMap here!
 const IconMap: Record<string, string> = {

@@ -8,7 +8,6 @@ import DesmosInitializer from "../DesmosInitializer";
 import InteractiveArticle from "./InteractiveArticle";
 import { LIVE_VAULT_URL, VAULT_DIRECTORY } from "@/lib/vault";
 import PdfViewerWrap from "./pdf/PdfViewerWrap";
-import { flattenPdfToc } from "@/lib/toc";
 
 const getCompiledData = cache((filePath: string) => {
     const fileContents = fs.readFileSync(filePath, 'utf8');
