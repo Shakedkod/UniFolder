@@ -9,12 +9,11 @@ import {
 } from '@/lib/inGraphMath';
 import katex from 'katex';
 
-function createHtmlLabel(label: string): string
-{
+function createHtmlLabel(label: string): string {
     // Parse and render math blocks: $$...$$ (display) and $...$ (inline)
     const parts: Array<string | { html: string }> = [];
     let lastIndex = 0;
-    
+
     // Regex to match display math ($$...$$) and inline math ($...$)
     const mathRegex = /(\$\$[\s\S]*?\$\$|\$[^\$\n]*?\$)/g;
     let match;
@@ -22,7 +21,7 @@ function createHtmlLabel(label: string): string
     while ((match = mathRegex.exec(label)) !== null) {
         const start = match.index;
         const end = match.index + match[0].length;
-        
+
         // Add text before the math
         if (start > lastIndex) {
             parts.push(label.substring(lastIndex, start));
@@ -31,8 +30,8 @@ function createHtmlLabel(label: string): string
         // Render math with KaTeX
         const mathContent = match[0];
         const isDisplay = mathContent.startsWith('$$');
-        const mathText = isDisplay 
-            ? mathContent.slice(2, -2) 
+        const mathText = isDisplay
+            ? mathContent.slice(2, -2)
             : mathContent.slice(1, -1);
 
         try {
@@ -110,15 +109,29 @@ function EdgesOverlay({ nodes, edges, gates, wires, gateStates, vb, markerId }: 
                             markerEnd={edge.type === 'arrow' ? `url(#${markerId})` : undefined}
                         />
                         {edge.label && (() => {
-                            const displayLabel = createHtmlLabel(edge.label);
+                            const displayLabel = edge.label!.replace(/\$([^$]*)\$/g, '$1');
                             return (
-                                <foreignObject x={lx} y={ly} width={1} height={1} overflow="visible">
+                                <foreignObject x={lx} y={ly} width={120} height={30} overflow="visible"
+                                    style={{ transform: 'translate(-60px, -15px)', pointerEvents: 'none' }}>
                                     <div
                                         // @ts-ignore
                                         xmlns="http://www.w3.org/1999/xhtml"
-                                        className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-foreground font-sans select-none pointer-events-none px-1"
-                                        dangerouslySetInnerHTML={{ __html: displayLabel }}
-                                    />
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: 12,
+                                            whiteSpace: 'nowrap',
+                                            userSelect: 'none',
+                                            pointerEvents: 'none',
+                                            fontFamily: 'var(--font-sans, sans-serif)',
+                                        }}
+                                        className="text-foreground"
+                                    >
+                                        {displayLabel}
+                                    </div>
                                 </foreignObject>
                             );
                         })()}

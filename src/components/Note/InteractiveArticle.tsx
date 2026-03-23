@@ -20,6 +20,7 @@ function InteractiveArticle({html, isCodeFile = false}: { html: string, isCodeFi
 
         // ── Mount graph renderers ──────────────────────────────────────
         const placeholders = articleRef.current.querySelectorAll<HTMLElement>(".in-graph-placeholder");
+        //console.log("Found graph placeholders:", placeholders);
         placeholders.forEach(el =>
         {
             if (el.dataset.mounted === "true") return;
