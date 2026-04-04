@@ -1,0 +1,301 @@
+/* ─── In-Graph Static Renderer ──────────────────────────────────────────────
+
+/* ── Light ── */
+:root,
+.light {
+    --graph-node-fill: #ffffff;
+    --graph-node-stroke: #020c25;
+    --graph-node-accept-stroke: #224ab9;
+    --graph-node-start-arrow: var(--graph-node-accept-stroke);
+    --graph-edge-stroke: #334155;
+    --graph-text: #0f172a;
+    --graph-label-bg: rgba(255, 255, 255, 0.85);
+    --graph-gate-fill: #f1f5f9;
+    --graph-gate-stroke: #1e3a8a;
+    --graph-group-fill: rgba(37, 99, 235, 0.04);
+    --graph-group-stroke: #bfdbfe;
+    --graph-group-label: #0f172a;
+    --graph-shadow: rgba(15, 23, 42, 1);
+    --graph-canvas-bg: #f8fafc;
+    --graph-canvas-border: #e2e8f0;
+    --graph-canvas-dot: #cbd5e1;
+    --graph-badge-bg: #eff6ff;
+    --graph-badge-text: #1e40af;
+    --graph-badge-border: #bfdbfe;
+    --graph-active: #2563eb;
+    --graph-active-text: #ffffff;
+}
+
+/* ── Dark ── */
+.dark {
+    --graph-node-fill: #111111;
+    --graph-node-stroke: #969696;
+    --graph-node-accept-stroke: #187900;
+    --graph-node-start-arrow: #fb923c;
+    --graph-edge-stroke: #64748b;
+    --graph-text: #f1f5f9;
+    --graph-label-bg: rgba(10, 10, 10, 0.82);
+    --graph-gate-fill: #1a1a1a;
+    --graph-gate-stroke: #fb923c;
+    --graph-group-fill: rgba(251, 146, 60, 0.05);
+    --graph-group-stroke: #431400;
+    --graph-group-label: #f1f5f9;
+    --graph-shadow: rgba(0, 0, 0, 1);
+    --graph-canvas-bg: #0a0a0a;
+    --graph-canvas-border: #1c1c1c;
+    --graph-canvas-dot: #1e1e1e;
+    --graph-badge-bg: #1a1a1a;
+    --graph-badge-text: #fb923c;
+    --graph-badge-border: #431400;
+    --graph-active: #fb923c;
+    --graph-active-text: #0a0a0a;
+}
+
+/* ── Deep-Ocean ── */
+.deep-ocean {
+    --graph-node-fill: #0b1120;
+    --graph-node-stroke: #06b6d4;
+    --graph-node-accept-stroke: #7ec8e3;
+    --graph-node-start-arrow: #2491b9;
+    --graph-edge-stroke: #7dd3fc;
+    --graph-text: #f0f9ff;
+    --graph-label-bg: rgba(11, 17, 32, 0.85);
+    --graph-gate-fill: #0f172a;
+    --graph-gate-stroke: #06b6d4;
+    --graph-group-fill: rgba(6, 182, 212, 0.04);
+    --graph-group-stroke: #083344;
+    --graph-group-label: #f0f9ff;
+    --graph-shadow: rgba(0, 0, 0, 1);
+    --graph-canvas-bg: #060d1a;
+    --graph-canvas-border: #0f2744;
+    --graph-canvas-dot: #0f2744;
+    --graph-badge-bg: #083344;
+    --graph-badge-text: #06b6d4;
+    --graph-badge-border: #0e7490;
+    --graph-active: #22d3ee;
+    --graph-active-text: #060d1a;
+}
+
+/* ── GitHub Light ── */
+.github-light {
+    --graph-node-fill: #ffffff;
+    --graph-node-stroke: #042a55;
+    --graph-node-accept-stroke: #0969da;
+    --graph-node-start-arrow: var(--graph-node-accept-stroke);
+    --graph-edge-stroke: #57606a;
+    --graph-text: #24292f;
+    --graph-label-bg: rgba(255, 255, 255, 0.9);
+    --graph-gate-fill: #f6f8fa;
+    --graph-gate-stroke: #0969da;
+    --graph-group-fill: rgba(9, 105, 218, 0.04);
+    --graph-group-stroke: #b6e3ff;
+    --graph-group-label: #24292f;
+    --graph-shadow: rgba(36, 41, 47, 0.8);
+    --graph-canvas-bg: #f6f8fa;
+    --graph-canvas-border: #d0d7de;
+    --graph-canvas-dot: #d0d7de;
+    --graph-badge-bg: #ddf4ff;
+    --graph-badge-text: #0550ae;
+    --graph-badge-border: #b6e3ff;
+    --graph-active: #0969da;
+    --graph-active-text: #ffffff;
+}
+
+/* ── Night ── */
+.night {
+    --graph-node-fill: #1e1e2e;
+    --graph-node-stroke: #cba6f7;
+    --graph-node-accept-stroke: #660869;
+    --graph-edge-stroke: #7f849c;
+    --graph-text: #cdd6f4;
+    --graph-label-bg: rgba(24, 24, 37, 0.88);
+    --graph-gate-fill: #181825;
+    --graph-gate-stroke: #cba6f7;
+    --graph-group-fill: rgba(203, 166, 247, 0.05);
+    --graph-group-stroke: #313244;
+    --graph-group-label: #cdd6f4;
+    --graph-shadow: rgba(0, 0, 0, 1);
+    --graph-canvas-bg: #11111b;
+    --graph-canvas-border: #313244;
+    --graph-canvas-dot: #1e1e2e;
+    --graph-badge-bg: #313244;
+    --graph-badge-text: #cba6f7;
+    --graph-badge-border: #45475a;
+    --graph-active: #cba6f7;
+    --graph-active-text: #11111b;
+}
+
+/* ── Warm-Light ── */
+.warm-light {
+    --graph-node-fill: #fffcf8;
+    --graph-node-stroke: #5c4a2a;
+    --graph-node-accept-stroke: #8b4513;
+    --graph-node-start-arrow: var(--graph-node-accept-stroke);
+    --graph-edge-stroke: #7a6a5a;
+    --graph-text: #3b3228;
+    --graph-label-bg: rgba(255, 252, 248, 0.88);
+    --graph-gate-fill: #fdf6e3;
+    --graph-gate-stroke: #b45309;
+    --graph-group-fill: rgba(217, 119, 6, 0.05);
+    --graph-group-stroke: #fde68a;
+    --graph-group-label: #3b3228;
+    --graph-shadow: rgba(59, 50, 40, 0.6);
+    --graph-canvas-bg: #fdf8f0;
+    --graph-canvas-border: #eaddcf;
+    --graph-canvas-dot: #e8d9c8;
+    --graph-badge-bg: #fef3c7;
+    --graph-badge-text: #92400e;
+    --graph-badge-border: #fde68a;
+    --graph-active: #d97706;
+    --graph-active-text: #ffffff;
+}
+
+/* ─── Wrapper card ─────────────────────────────────────────────────────────── */
+.in-graph-static-wrapper {
+    position: relative;
+    margin: 1.5rem 0;
+    border-radius: 12px;
+    border: 1px solid var(--graph-canvas-border);
+    background-color: var(--graph-canvas-bg);
+    background-image: radial-gradient(circle,
+            var(--graph-canvas-dot) 1px,
+            transparent 1px);
+    background-size: 24px 24px;
+    overflow: hidden;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.06),
+        0 4px 16px rgba(0, 0, 0, 0.04);
+    direction: ltr;
+}
+
+/* Type badge (top-right corner) */
+.in-graph-static-wrapper::before {
+    content: attr(data-graph-type);
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--graph-badge-text);
+    background: var(--graph-badge-bg);
+    border: 1px solid var(--graph-badge-border);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* ─── SVG canvas ───────────────────────────────────────────────────────────── */
+.in-graph-static-svg {
+    display: block;
+    width: 100%;
+    mask-image: linear-gradient(to right,
+            transparent 0%,
+            black 3%,
+            black 97%,
+            transparent 100%);
+}
+
+/* ─── Active wire animation ────────────────────────────────────────────────── */
+@keyframes in-graph-wire-flow {
+    from {
+        stroke-dashoffset: 0;
+    }
+
+    to {
+        stroke-dashoffset: -16;
+    }
+}
+
+.in-graph-wire-active {
+    animation: in-graph-wire-flow 0.4s linear infinite;
+    filter: drop-shadow(0 0 3px var(--graph-active));
+}
+
+/* ─── Node hover glows ─────────────────────────────────────────────────────── */
+.in-graph-node circle {
+    transition: filter 0.2s ease;
+}
+
+.in-graph-static-wrapper:hover .in-graph-node circle {
+    filter: drop-shadow(0 0 4px var(--graph-node-stroke));
+}
+
+/* ─── Gate hover glow ──────────────────────────────────────────────────────── */
+.in-graph-gate path:first-of-type {
+    transition: filter 0.2s ease;
+}
+
+.in-graph-static-wrapper:hover .in-graph-gate path:first-of-type {
+    filter: drop-shadow(0 0 3px var(--graph-gate-stroke));
+}
+
+/* ─── Edge lines ───────────────────────────────────────────────────────────── */
+.in-graph-edge path {
+    transition: stroke-width 0.15s ease;
+}
+
+.in-graph-static-wrapper:hover .in-graph-edge path {
+    stroke-width: 2.5px;
+}
+
+/* ─── KaTeX inside labels ──────────────────────────────────────────────────── */
+/*
+  Make sure katex/dist/katex.min.css is imported in globals.css:
+    @import "katex/dist/katex.min.css";
+*/
+.in-graph-label .katex,
+.in-graph-label .katex-html,
+.in-graph-label .katex * {
+    color: inherit !important;
+}
+
+.in-graph-label .katex {
+    font-size: 1em;
+    line-height: 1.2;
+    vertical-align: middle;
+}
+
+.in-graph-label-text {
+    vertical-align: middle;
+    line-height: 1;
+}
+
+/* ─── Error state ──────────────────────────────────────────────────────────── */
+.in-graph-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    font-size: 13px;
+    color: var(--really-light-text);
+    background: var(--accent-background);
+    border: 1px dashed var(--button-border);
+    border-radius: 10px;
+    margin: 1rem 0;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    direction: ltr;
+}
+
+/* ─── Print ────────────────────────────────────────────────────────────────── */
+@media print {
+    .in-graph-static-wrapper {
+        background-image: none;
+        border-color: #ccc;
+        box-shadow: none;
+        mask-image: none;
+        break-inside: avoid;
+    }
+
+    .in-graph-static-wrapper::before {
+        display: none;
+    }
+
+    .in-graph-wire-active {
+        animation: none;
+        filter: none;
+    }
+}

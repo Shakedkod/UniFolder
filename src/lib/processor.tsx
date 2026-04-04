@@ -157,7 +157,8 @@ const remarkInGraph = () => (tree: any) =>
         {
             // Validate it's real JSON, then pass it through as a data attribute
             JSON.parse(node.value);
-            const encoded = encodeURIComponent(node.value);
+            
+            const encoded = Buffer.from(node.value).toString('base64');
             node.type = 'html';
             node.value = `<div class="in-graph-placeholder" data-graph="${encoded}"></div>`;
         } catch (e: any)
