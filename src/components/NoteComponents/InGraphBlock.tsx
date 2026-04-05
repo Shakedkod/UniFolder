@@ -10,6 +10,7 @@
 
 import { useEffect, useRef } from "react";
 import katex from "katex";
+import { get } from "http";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -229,8 +230,8 @@ function getEdgePath(
 ): { path: string; lx: number; ly: number } {
     const sx = src.position.x, sy = src.position.y;
     const tx = tgt.position.x, ty = tgt.position.y;
-    const srcR = src.radius ?? 25;
-    const tgtR = tgt.radius ?? 25;
+    const srcR = getNodeRadius(src);
+    const tgtR = getNodeRadius(tgt);
 
     const normal = (dx: number, dy: number) => {
         const d = Math.sqrt(dx * dx + dy * dy) || 1;
