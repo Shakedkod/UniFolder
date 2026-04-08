@@ -14,3 +14,10 @@
 .dark .academic-preview .graphviz-container svg, .night .academic-preview .graphviz-container svg, .deep-ocean .academic-preview .graphviz-container svg {
     filter: invert(1) hue-rotate(180deg);
 }
+
+@media print 
+{
+    .academic-preview .graphviz-container svg {
+        filter: none !important;
+    }
+}

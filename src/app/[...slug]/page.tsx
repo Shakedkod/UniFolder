@@ -20,6 +20,8 @@ export default async function NotePage({ params }: { params: { slug: string[] } 
     const parentName = parentSlug.length > 0
         ? getFolderTitle(decodeURIComponent(parentSlug[parentSlug.length - 1]))
         : 'תיקייה ראשית';
+    
+    const connectedCourseName = currentSlug.length > 2 ? getFolderTitle(decodeURIComponent(currentSlug[2])).replace(/^\d+\s*-\s*/, '').trim() : undefined;
 
     // ==========================================
     // 1. THE FOLDER INTERCEPTOR
@@ -31,5 +33,5 @@ export default async function NotePage({ params }: { params: { slug: string[] } 
     // ==========================================
     // 2. THE STANDARD NOTE/CODE RENDERER
     // ==========================================
-    return <NoteContent currentSlug={currentSlug} parentUrl={parentUrl} parentName={parentName} />;
+    return <NoteContent currentSlug={currentSlug} parentUrl={parentUrl} parentName={parentName} courseName={connectedCourseName} />;
 }

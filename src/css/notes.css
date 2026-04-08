@@ -109,6 +109,12 @@ article.academic-preview .obsidian-image {
     filter: invert(1) hue-rotate(180deg);
 }
 
+@media print {
+    .academic-preview img[src*=".excalidraw.svg"] {
+        filter: none !important;
+    }
+}
+
 /* Tell the browser to only render heavy elements when you scroll near them! */
 .callout, 
 pre, 

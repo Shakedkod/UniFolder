@@ -9,6 +9,7 @@ import { SearchBar } from "./Home";
 import BackButton from "./NoteComponents/BackButton";
 import RenderMD from "./MarkdownRendererForInline";
 import ThemeMenu from "./ThemeMenu";
+import PrintTitlePage from "./Note/pdf/TitlePageForPDF";
 
 interface NavigatorContent {
     title: string;
@@ -17,6 +18,12 @@ interface NavigatorContent {
         url: string;
         name: string;
     };
+    isCourse: boolean;
+    course: {
+        id: string;
+        name: string;
+    };
+    type: string;
 }
 
 const levelStyles: Record<number, string> = {
@@ -59,23 +66,6 @@ function JustArrowBackButton({ url }: { url: string; }) {
             <ArrowRight size={24} />
         </Link>
     );
-}
-
-function useIsDesktop() {
-    const [isDesktop, setIsDesktop] = useState(false);
-
-    useEffect(() => {
-        // Function to update the state based on window width
-        const checkWidth = () => {
-            setIsDesktop(window.innerWidth >= 1280); // 1280px is Tailwind's 'xl' breakpoint
-        };
-
-        checkWidth(); // Check immediately on mount
-        window.addEventListener("resize", checkWidth);
-        return () => window.removeEventListener("resize", checkWidth);
-    }, []);
-
-    return isDesktop;
 }
 
 // ==========================================
@@ -131,7 +121,6 @@ export function FadingScrollContainer({ children, activeHeadingId }: { children:
 // ==========================================
 
 export default function Sidebar({ content }: { content: NavigatorContent }) {
-    const isDesktop = useIsDesktop();
     const [activeId, setActiveId] = useState<string>("");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [manualToggleState, setManualToggleState] = useState<Record<string, boolean>>({});
@@ -290,7 +279,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
     return (<>
         {/* ---------------------- DESKTOP SIDEBAR ---------------------- */}
         <aside
-            className={`hidden xl:flex h-screen p-4 lg:p-10 flex-col justify-between sticky top-0 bg-accent2-background border-l border-accent2-border shadow-lg z-40`}
+            className={`hidden xl:flex h-screen p-4 lg:p-10 flex-col justify-between sticky top-0 bg-accent2-background border-l border-accent2-border shadow-lg z-40 print:hidden`}
             dir="rtl"
             style={{
                 // @ts-ignore
@@ -333,7 +322,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
         </aside>
 
         {/* ---------------------- TABLET TOPBAR ---------------------- */}
-        <div className="hidden sm:flex xl:hidden w-full h-16 bg-accent2-background border-b border-accent2-border shadow-lg flex-row items-center justify-between px-4 sticky top-0 z-50" dir="rtl">
+        <div className="hidden sm:flex xl:hidden w-full h-16 bg-accent2-background border-b border-accent2-border shadow-lg flex-row items-center justify-between px-4 sticky top-0 z-50 print:hidden" dir="rtl">
             <JustArrowBackButton url={content.parent.url} />
             <h1 className="text-lg font-bold text-accent2-foreground">
                 {content.title}
@@ -357,7 +346,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
 
         {isMenuOpen && (
             <div
-                className={`fixed top-0 right-0 h-full w-72 sm:w-80 bg-accent2-background shadow-2xl z-[60] transform transition-transform duration-300 xl:hidden flex flex-col ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                className={`fixed top-0 right-0 h-full w-72 sm:w-80 bg-accent2-background shadow-2xl z-[60] transform transition-transform duration-300 xl:hidden flex flex-col ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} print:hidden`}
                 dir="rtl"
             >
                 <div className="p-6 flex flex-col h-full">
@@ -391,12 +380,22 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
         {/* ---------------------- PHONE FLOATING BUTTON ---------------------- */}
         <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="fixed bottom-6 right-6 z-[70] w-14 h-14 flex items-center justify-center bg-hero-primary-main hover:bg-hero-primary-hover text-accent2-foreground rounded-full shadow-[0_4px_14px_var(--shadow-color)] transition-all duration-300 sm:hidden"
+            className="fixed bottom-6 right-6 z-[70] w-14 h-14 flex items-center justify-center bg-hero-primary-main hover:bg-hero-primary-hover text-accent2-foreground rounded-full shadow-[0_4px_14px_var(--shadow-color)] transition-all duration-300 sm:hidden print:hidden"
             aria-label="Toggle Mobile Menu"
         >
             <div className={`transition-transform duration-300 flex items-center justify-center ${isMenuOpen ? 'rotate-90 scale-110' : 'rotate-0'}`}>
                 {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </div>
         </button>
+
+        <div className="hidden print:flex print:w-full print:flex-col print:justify-start">
+            <PrintTitlePage
+                courseId={content.course.id}
+                courseName={content.course.name}
+                pageTitle={content.title}
+                type={content.type}
+            />
+            <div style={{ pageBreakBefore: "always" }}></div>
+        </div>
     </>);
 }
