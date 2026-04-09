@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "sync": "npx tsx src/scripts/sync-vault.ts",
-    "build": "npx tsx src/scripts/sync-vault.ts && next build",
+    "build": "npx tsx src/scripts/sync-vault.ts && next build && npx tsx src/scripts/generate-pdfs.ts",
     "start": "next start",
     "lint": "eslint"
   },
@@ -52,6 +52,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "puppeteer": "^24.40.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
