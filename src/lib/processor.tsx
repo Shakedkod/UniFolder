@@ -18,6 +18,8 @@ import path from 'path';
 import {VAULT_DIRECTORY} from './vault';
 import katex from 'katex';
 
+import 'katex/dist/contrib/mhchem';
+
 // Move your IconMap here!
 const IconMap: Record<string, string> = {
     'LiHeart': '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>'
@@ -167,6 +169,33 @@ const remarkInGraph = () => (tree: any) =>
             node.value = `<div class="in-graph-error">Graph parse error: ${e.message}</div>`;
         }
     });
+};
+
+const remarkD2 = () => async (tree: any) => {
+    const nodes: any[] = [];
+    visit(tree, 'code', (node: any) => {
+        if (node.lang === 'd2') nodes.push(node);
+    });
+    if (nodes.length === 0) return;
+
+    const { D2 } = await import('@terrastruct/d2');
+    const d2 = new D2();
+    for (const node of nodes) {
+        try {
+            const result = await d2.compile(node.value, { sketch: true });
+            let svg = await d2.render(result.diagram, {
+                ...result.renderOptions,
+                themeID: 105,
+            });
+            svg = svg.replace(/<rect[^>]*fill-N7[^>]*stroke-width="0"[^>]*><\/rect>/, ''); // Remove the white background that D2 adds by default
+
+            node.type = 'html';
+            node.value = `<div class="d2-container"><div class="d2-block">${svg}</div></div>`;
+        } catch (e: any) {
+            node.type = 'html';
+            node.value = `<div style="color: #ef4444; border: 1px solid #ef4444; padding: 1rem; border-radius: 0.5rem; text-align: left;" dir="ltr"><strong>D2 Error:</strong><br/>${e.message}</div>`;
+        }
+    }
 };
 
 // The Advanced Callout Transformer Plugin
@@ -539,6 +568,7 @@ export async function renderMarkdownContent(markdownContent: string)
             .use(remarkBreaks)
             .use(remarkGraphviz)
             .use(remarkInGraph)
+            .use(remarkD2)
             .use(remarkDesmos)
             .use(remarkMath)
             .use(remarkFrontmatter, ['yaml'])

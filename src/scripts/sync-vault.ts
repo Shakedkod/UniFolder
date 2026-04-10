@@ -5,6 +5,7 @@ import matter from 'gray-matter';
 import { renderMarkdownContent } from '@/lib/processor';
 import { VAULT_DIRECTORY } from '@/lib/vault';
 import { PDFParse } from 'pdf-parse';
+import { exit } from 'process';
 
 // CLOUD CONFIGURATION
 const GITHUB_PAT = process.env.GITHUB_PAT;
@@ -355,6 +356,7 @@ async function main() {
     generateSearchIndex(vaultTree);
 
     console.log('✨ Vault Sync Complete!');
+    exit(0);
 }
 
 main();

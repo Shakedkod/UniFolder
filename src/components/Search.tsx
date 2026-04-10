@@ -203,7 +203,7 @@ export default function Search() {
         >
             {/* The modal container: stopPropagation prevents clicks inside from closing it */}
             <div
-                className="bg-button-bg border border-button-border-light/60 w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden flex flex-col"
+                className="bg-button-bg border border-button-border-light/60 w-full max-w-2xl print:max-w-none rounded-xl shadow-2xl overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Search Input Header */}

@@ -21,3 +21,69 @@
         filter: none !important;
     }
 }
+
+/* --- D2 Diagram Styling --- */
+.d2-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.d2-block:has(> :not(svg)) {
+    content: "Rendering D2 diagram...";
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    color: var(--really-light-text);
+    background: var(--accent-background);
+    border: 1px dashed var(--button-border);
+    border-radius: 10px;
+}
+
+.d2-block
+{
+    direction: ltr;
+    width: 50%;
+    transition: height 0.2s ease;
+}
+
+.night .fill-N1, .deep-ocean .fill-N1, .dark .fill-N1
+{
+    fill: var(--foreground) !important;
+}
+
+.night .fill-AA2, .deep-ocean .fill-AA2
+{
+    fill: var(--highlight) !important;
+}
+
+.dark .fill-AA2
+{
+    fill: var(--accent-foreground) !important;
+}
+
+.fill-N7
+{
+    fill: var(--background) !important;
+}
+
+.night .fill-B4, .deep-ocean .fill-B4
+{
+    fill: var(--accent-foreground) !important;
+}
+
+.dark .fill-B4
+{
+    fill: var(--really-light-accent-border) !important;
+}
+
+.dark .stroke-B1
+{
+    stroke: var(--foreground) !important;
+}
+
+.dark .fill-N2
+{
+    fill: var(--foreground) !important;
+}

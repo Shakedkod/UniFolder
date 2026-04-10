@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "sync": "npx tsx src/scripts/sync-vault.ts",
-    "build": "npx tsx src/scripts/sync-vault.ts && next build && npx tsx src/scripts/generate-pdfs.ts",
+    "build": "npx tsx src/scripts/sync-vault.ts && next build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -14,6 +14,7 @@
     "@react-pdf-viewer/default-layout": "^3.12.0",
     "@react-pdf-viewer/page-navigation": "^3.12.0",
     "@react-pdf-viewer/zoom": "^3.12.0",
+    "@terrastruct/d2": "^0.1.33",
     "@vercel/analytics": "^1.6.1",
     "@vercel/speed-insights": "^1.3.1",
     "@viz-js/viz": "^3.24.0",

@@ -10,6 +10,7 @@ import BackButton from "./NoteComponents/BackButton";
 import RenderMD from "./MarkdownRendererForInline";
 import ThemeMenu from "./ThemeMenu";
 import PrintTitlePage from "./Note/pdf/TitlePageForPDF";
+import path from "path";
 
 interface NavigatorContent {
     title: string;
@@ -206,6 +207,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
         return () => { document.body.style.overflow = 'auto'; };
     }, [isMenuOpen]);
 
+
     const contentList = (
         <ul className="flex flex-col space-y-2 pb-8">
             {content.toc?.map((item: TocItem) => {
@@ -322,7 +324,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
         </aside>
 
         {/* ---------------------- TABLET TOPBAR ---------------------- */}
-        <div className="hidden sm:flex xl:hidden w-full h-16 bg-accent2-background border-b border-accent2-border shadow-lg flex-row items-center justify-between px-4 sticky top-0 z-50 print:hidden" dir="rtl">
+        <header className="hidden sm:flex xl:hidden w-full h-16 bg-accent2-background border-b border-accent2-border shadow-lg flex-row items-center justify-between px-4 sticky top-0 z-50 print:hidden" dir="rtl">
             <JustArrowBackButton url={content.parent.url} />
             <h1 className="text-lg font-bold text-accent2-foreground">
                 {content.title}
@@ -334,7 +336,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
             >
                 <Menu size={24} />
             </button>
-        </div>
+        </header>
 
         {/* ---------------------- MOBILE DRAWER MENU ---------------------- */}
         {isMenuOpen && (

@@ -37,7 +37,7 @@ export default async function FolderPage({ currentSlug, parentUrl, parentName }:
     );
 
     return (
-        <main className="max-w-5xl mx-auto p-8" dir="rtl">
+        <main className="max-w-5xl print:max-w-none mx-auto p-8" dir="rtl">
             {/* Back Button */}
             <BackButton url={parentUrl} name={parentName} bg="light" />
 

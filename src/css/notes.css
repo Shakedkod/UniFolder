@@ -46,7 +46,7 @@
 }
 
 .academic-preview img {
-    @apply rounded-md max-w-full h-auto my-3 mx-auto;
+    @apply rounded-md max-w-full print:max-w-none h-auto my-3 mx-auto;
 }
 
 .academic-preview table {

@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
         headers: [{ key: 'Content-Type', value: 'application/pdf' }]
       }
     ];
-  }
+  },
 };
 
 export default nextConfig;

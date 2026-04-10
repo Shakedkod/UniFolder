@@ -53,9 +53,6 @@ export default function PrintTitlePage({ courseId, courseName, pageTitle, type }
                 <h1 className="text-6xl font-extrabold leading-tight tracking-tight mt-2 mb-4">
                     {pageTitle.replace(/^\d+\s*-\s*/, '').trim()}
                 </h1>
-                
-                {/* Visual Accent Box */}
-                <div className="absolute inset-0 border-[30px] border-accent2-border/10 rounded-full opacity-5 pointer-events-none" />
             </div>
 
             {/* BOTTOM SECTION: The Signature/Footer */}

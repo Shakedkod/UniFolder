@@ -6,7 +6,7 @@ import { Home, FileQuestion, ArrowRight } from "lucide-react";
 export default function NotFound() {
     return (
         <div className="flex flex-col items-center justify-center min-h-[80vh] bg-background text-foreground p-8" dir="rtl">
-            <div className="max-w-md w-full text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
+            <div className="max-w-md print:max-w-none w-full text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
                 
                 {/* Glowing Icon Graphic */}
                 <div className="flex justify-center">

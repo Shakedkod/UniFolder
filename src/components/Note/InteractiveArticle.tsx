@@ -1,7 +1,6 @@
 "use client";
 
 import { memo, useEffect, useRef } from "react";
-import { createRoot } from "react-dom/client";
 import { renderInGraphPlaceholders } from "@/components/NoteComponents/InGraphBlock";
 
 const copyIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
@@ -9,13 +8,11 @@ const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16
 
 function InteractiveArticle({ html, isCodeFile = false }: { html: string; isCodeFile?: boolean }) {
     const articleRef = useRef<HTMLElement>(null);
-    const graphRootsRef = useRef<ReturnType<typeof createRoot>[]>([]);
 
     useEffect(() => {
         if (!articleRef.current) return;
 
         // ── 1. Render in-graph placeholders ──────────────────────────────────
-        //    Must run BEFORE the pre-tag loop so replaced nodes don't confuse it.
         renderInGraphPlaceholders(articleRef.current);
 
         // ── 2. Annotate graph wrappers with their type badge ─────────────────

@@ -28,7 +28,7 @@ export default function SearchBar({ size }: { size?: number })
         <div 
             dir="rtl"
             onClick={handleOpenSearch} 
-            className="group relative w-full max-w-2xl mx-auto cursor-pointer"
+            className="group relative w-full max-w-2xl print:max-w-none mx-auto cursor-pointer"
         >
             <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                 <SearchIcon className="h-5 w-5 text-gray-500 group-hover:text-highlight-icon transition-colors" />

@@ -740,6 +740,10 @@ main {
     }
   }
 
+  * {
+    filter: none !important;
+  }
+
   /* compensate with padding on the body/content instead */
   body {
     padding: 0 10mm;
@@ -785,6 +789,34 @@ main {
   pre code {
     white-space: pre-wrap !important;
     word-break: break-word !important;
+  }
+}
+
+@media print {
+  /* KaTeX SVG filter fix */
+  .katex svg,
+  .katex-display svg,
+  mjx-container svg {
+    filter: none !important;
+  }
+  
+  /* Strip inline filters from anything inside your article */
+  article * {
+    filter: none !important;
+    clip-path: none !important;
+  }
+}
+
+@media print {
+  .katex svg {
+    max-width: 100% !important;
+    width: auto !important;
+  }
+}
+
+@media print {
+  .copy-btn {
+    display: none !important; /* No need for copy buttons in print anyway */
   }
 }
 
