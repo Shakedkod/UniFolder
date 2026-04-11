@@ -91,7 +91,7 @@ export default async function NoteContent({ currentSlug, parentUrl, parentName, 
                             {rawFilename}
                         </h1>
                     )}
-                    <InteractiveArticle html={html} isCodeFile={!!(type == "code")} />
+                    <InteractiveArticle title={title} html={html} isCodeFile={!!(type == "code")} />
                 </Suspense>
             </main>
 

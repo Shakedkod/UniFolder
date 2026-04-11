@@ -2,6 +2,7 @@ import { getFolderContents, getFolderTitle, getFriendlyName } from "@/lib/vault"
 import ItemLink from "../NoteComponents/ItemLink";
 import BackButton from "../NoteComponents/BackButton";
 import { Folder } from "lucide-react";
+import SetPageTitle from "../SetPageTitle";
 
 export default async function FolderPage({ currentSlug, parentUrl, parentName }: { currentSlug: string[]; parentUrl: string; parentName: string }) {
     const items = getFolderContents(currentSlug);
@@ -37,44 +38,46 @@ export default async function FolderPage({ currentSlug, parentUrl, parentName }:
     );
 
     return (
-        <main className="max-w-5xl print:max-w-none mx-auto p-8" dir="rtl">
-            {/* Back Button */}
-            <BackButton url={parentUrl} name={parentName} bg="light" />
+        <SetPageTitle title={folderName}>
+            <main className="max-w-5xl print:max-w-none mx-auto p-8" dir="rtl">
+                {/* Back Button */}
+                <BackButton url={parentUrl} name={parentName} bg="light" />
 
-            {/* Main Header */}
-            <h1 className="text-4xl font-bold mb-10 text-foreground-title flex items-center gap-3">
-                <Folder size={36} />
-                {folderName}
-            </h1>
+                {/* Main Header */}
+                <h1 className="text-4xl font-bold mb-10 text-foreground-title flex items-center gap-3">
+                    <Folder size={36} />
+                    {folderName}
+                </h1>
 
-            {/* --- Render the Sections Dynamically --- */}
-            {folders.length > 0 && (
-                <section>
-                    <h2 className="text-lg font-semibold text-gray-500 mb-4 border-b border-gray-800 pb-2">תיקיות</h2>
-                    {renderGrid(folders)}
-                </section>
-            )}
+                {/* --- Render the Sections Dynamically --- */}
+                {folders.length > 0 && (
+                    <section>
+                        <h2 className="text-lg font-semibold text-gray-500 mb-4 border-b border-gray-800 pb-2">תיקיות</h2>
+                        {renderGrid(folders)}
+                    </section>
+                )}
 
-            {numberedFiles.length > 0 && (
-                <section>
-                    <h2 className="text-lg font-semibold text-gray-500 mb-4 border-b border-gray-800 pb-2">רצף לימוד</h2>
-                    {renderGrid(numberedFiles)}
-                </section>
-            )}
+                {numberedFiles.length > 0 && (
+                    <section>
+                        <h2 className="text-lg font-semibold text-gray-500 mb-4 border-b border-gray-800 pb-2">רצף לימוד</h2>
+                        {renderGrid(numberedFiles)}
+                    </section>
+                )}
 
-            {homeworkFiles.length > 0 && (
-                <section>
-                    <h2 className="text-lg font-semibold text-gray-500 mb-4 border-b border-gray-800 pb-2">שיעורי בית ומטלות</h2>
-                    {renderGrid(homeworkFiles)}
-                </section>
-            )}
+                {homeworkFiles.length > 0 && (
+                    <section>
+                        <h2 className="text-lg font-semibold text-gray-500 mb-4 border-b border-gray-800 pb-2">שיעורי בית ומטלות</h2>
+                        {renderGrid(homeworkFiles)}
+                    </section>
+                )}
 
-            {unnumberedFiles.length > 0 && (
-                <section>
-                    <h2 className="text-lg font-semibold text-gray-500 mb-4 border-b border-gray-800 pb-2">חומרים נוספים</h2>
-                    {renderGrid(unnumberedFiles)}
-                </section>
-            )}
-        </main>
+                {unnumberedFiles.length > 0 && (
+                    <section>
+                        <h2 className="text-lg font-semibold text-gray-500 mb-4 border-b border-gray-800 pb-2">חומרים נוספים</h2>
+                        {renderGrid(unnumberedFiles)}
+                    </section>
+                )}
+            </main>
+        </SetPageTitle>
     );
 }
