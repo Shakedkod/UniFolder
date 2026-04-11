@@ -182,7 +182,7 @@ const remarkD2 = () => async (tree: any) => {
     const d2 = new D2();
     for (const node of nodes) {
         try {
-            const result = await d2.compile(node.value, { sketch: true });
+            const result = await d2.compile(node.value, { sketch: true } as any);
             let svg = await d2.render(result.diagram, {
                 ...result.renderOptions,
                 themeID: 105,
