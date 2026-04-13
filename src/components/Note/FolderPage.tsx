@@ -16,7 +16,7 @@ export default async function FolderPage({ currentSlug, parentUrl, parentName }:
 
     // 1. Define the Regex patterns
     // Matches any common homework keyword
-    const hwRegex = /(גליון|גיליון|וובוורק|שיעורי\s*בית|מטלה|hw|homework)/i;
+    const hwRegex = /(גליון|גיליון|וובוורק|שיעורי\s*בית|מטלה|hw|homework|שאלון)/i;
     // Matches if the string starts with a number
     const numberedRegex = /^\d+/;
 
