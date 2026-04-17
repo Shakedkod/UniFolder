@@ -1,4 +1,4 @@
-import {unified} from 'unified';
+import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkRehype from 'remark-rehype';
@@ -9,13 +9,13 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeStringify from 'rehype-stringify';
 import remarkBreaks from 'remark-breaks';
-import {visit} from 'unist-util-visit';
-import {instance} from '@viz-js/viz';
+import { visit } from 'unist-util-visit';
+import { instance } from '@viz-js/viz';
 import rehypeHighlight from 'rehype-highlight';
 import GithubSlugger from 'github-slugger';
 import fs from 'fs';
 import path from 'path';
-import {VAULT_DIRECTORY} from './vault';
+import { VAULT_DIRECTORY } from './vault';
 import katex from 'katex';
 
 import 'katex/dist/contrib/mhchem';
@@ -26,39 +26,38 @@ const IconMap: Record<string, string> = {
 };
 
 // The TOC Extractor
-const extractTOCPlugin = () => (tree: any, file: any) =>
-{
+function extractTitleText(children: any[]): string {
+    console.log('Extracting title text from children:', children);
+    let result = '';
+    for (const child of children) {
+        if (child.type === 'text') {
+            result += child.value;
+        } else if (child.tagName === 'span' && child.properties?.className?.includes('math-inline')) {
+            const rawLatex = child.children?.find((c: any) => c.type === 'text')?.value;
+            console.log('Extracted inline math for TOC title:', rawLatex);
+            if (rawLatex) result += `$${rawLatex}$`;
+            console.log('Current extracted title text:', result);
+        } else if (child.children?.length) {
+            // Recurse into em, strong, code, a, etc.
+            result += extractTitleText(child.children);
+        }
+    }
+    return result;
+}
+
+const extractTOCPlugin = () => (tree: any, file: any) => {
+    console.log('Starting TOC extraction...');
     file.data.toc = [];
     let currentHeading: any = null;
     const slugger = new GithubSlugger();
 
-    visit(tree, 'element', (node: any) =>
-    {
+    visit(tree, 'element', (node: any) => {
         // A. Detect Headings
-        if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(node.tagName))
-        {
+        if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(node.tagName)) {
             const id = node.properties?.id;
-            let title = '';
+            let title = extractTitleText(node.children);
 
-            node.children.forEach((child: any) =>
-            {
-                if (child.type === 'text')
-                {
-                    title += child.value;
-                } else if (child.type === 'inlineMath')
-                {
-                    // Wrap math in $ so RenderMD knows how to handle it
-                    title += `$${child.value}$`;
-                } else if (child.tagName === 'span' && child.properties?.className?.includes('katex'))
-                {
-                    // If Katex already processed it, try to find the original math source
-                    const annotation = child.children?.find((c: any) => c.tagName === 'annotation');
-                    if (annotation) title += `$${annotation.children[0].value}$`;
-                }
-            });
-
-            if (id && title)
-            {
+            if (id && title) {
                 currentHeading = {
                     level: parseInt(node.tagName.charAt(1), 10),
                     id,
@@ -70,10 +69,8 @@ const extractTOCPlugin = () => (tree: any, file: any) =>
         }
 
         // B. Detect Callouts (Safely checks the data-callout attribute)
-        else if (node.tagName === 'div' && node.properties?.['data-callout'])
-        {
-            if (currentHeading)
-            {
+        else if (node.tagName === 'div' && node.properties?.['data-callout']) {
+            if (currentHeading) {
                 const calloutType = node.properties['data-callout'];
 
                 // Only index academic callouts (skip standard 'note', 'info', or 'warning')
@@ -82,19 +79,15 @@ const extractTOCPlugin = () => (tree: any, file: any) =>
 
                 let title = '';
                 // Search children for the title wrapper we built earlier
-                visit(node, 'element', (child: any) =>
-                {
-                    if (child.properties?.className?.includes('callout-title-inner'))
-                    {
-                        visit(child, 'text', (textNode: any) =>
-                        {
+                visit(node, 'element', (child: any) => {
+                    if (child.properties?.className?.includes('callout-title-inner')) {
+                        visit(child, 'text', (textNode: any) => {
                             title += textNode.value;
                         });
                     }
                 });
 
-                if (title)
-                {
+                if (title) {
                     title = title.trim();
 
                     // 1. Generate a clean ID for the callout (e.g., "משפט-1")
@@ -115,14 +108,11 @@ const extractTOCPlugin = () => (tree: any, file: any) =>
     });
 };
 
-const remarkGraphviz = () => async (tree: any) =>
-{
+const remarkGraphviz = () => async (tree: any) => {
     const nodes: any[] = [];
 
-    visit(tree, 'code', (node: any) =>
-    {
-        if (node.lang === 'dot' || node.lang === 'graphviz')
-        {
+    visit(tree, 'code', (node: any) => {
+        if (node.lang === 'dot' || node.lang === 'graphviz') {
             nodes.push(node);
         }
     });
@@ -130,17 +120,14 @@ const remarkGraphviz = () => async (tree: any) =>
     if (nodes.length === 0) return;
     const viz = await instance();
 
-    for (const node of nodes)
-    {
-        try
-        {
-            const svg = viz.renderString(node.value, {format: "svg"});
+    for (const node of nodes) {
+        try {
+            const svg = viz.renderString(node.value, { format: "svg" });
 
             node.type = 'html';
             node.value = `<div class="graphviz-container">${svg}</div>`;
 
-        } catch (error: any)
-        {
+        } catch (error: any) {
             console.error('Graphviz rendering error:', error.message);
             node.type = 'html';
             node.value = `<div style="color: #ef4444; border: 1px solid #ef4444; padding: 1rem; border-radius: 0.5rem; text-align: left;" dir="ltr">
@@ -150,21 +137,17 @@ const remarkGraphviz = () => async (tree: any) =>
     }
 };
 
-const remarkInGraph = () => (tree: any) =>
-{
-    visit(tree, 'code', (node: any) =>
-    {
+const remarkInGraph = () => (tree: any) => {
+    visit(tree, 'code', (node: any) => {
         if (node.lang !== 'in-graph') return;
-        try
-        {
+        try {
             // Validate it's real JSON, then pass it through as a data attribute
             JSON.parse(node.value);
-            
+
             const encoded = Buffer.from(node.value).toString('base64');
             node.type = 'html';
             node.value = `<div class="in-graph-placeholder" data-graph="${encoded}"></div>`;
-        } catch (e: any)
-        {
+        } catch (e: any) {
             node.type = 'html';
             node.value = `<div class="in-graph-error">Graph parse error: ${e.message}</div>`;
         }
@@ -199,26 +182,20 @@ const remarkD2 = () => async (tree: any) => {
 };
 
 // The Advanced Callout Transformer Plugin
-const rehypeObsidianCallouts = () =>
-{
-    return (tree: any, file: any) =>
-    {
+const rehypeObsidianCallouts = () => {
+    return (tree: any, file: any) => {
         const counters: Record<string, number> = {};
 
-        visit(tree, 'element', (node: any) =>
-        {
-            if (node.tagName === 'blockquote')
-            {
+        visit(tree, 'element', (node: any) => {
+            if (node.tagName === 'blockquote') {
                 const firstChild = node.children.find((c: any) => c.tagName === 'p');
                 if (!firstChild) return;
 
                 const firstTextNode = firstChild.children[0];
-                if (firstTextNode && firstTextNode.type === 'text')
-                {
+                if (firstTextNode && firstTextNode.type === 'text') {
                     const match = firstTextNode.value.match(/^\[!([^\]]+)\](.*)/);
 
-                    if (match)
-                    {
+                    if (match) {
                         const rawType = match[1];
                         const parts = rawType.split('|');
                         const calloutType = parts[0].toLowerCase();
@@ -236,8 +213,7 @@ const rehypeObsidianCallouts = () =>
                         let numberStr = "";
                         if (modifier === "*") numberStr = "";
                         else if (modifier) numberStr = ` ${modifier}`;
-                        else if (mathTypes.includes(calloutType))
-                        {
+                        else if (mathTypes.includes(calloutType)) {
                             counters[calloutType] = (counters[calloutType] || 0) + 1;
                             numberStr = ` ${counters[calloutType]}`;
                         }
@@ -250,49 +226,39 @@ const rehypeObsidianCallouts = () =>
 
                         // 2. Loop through the paragraph's children until we hit a newline
                         let splitIndex = -1;
-                        for (let i = 0; i < firstChild.children.length; i++)
-                        {
+                        for (let i = 0; i < firstChild.children.length; i++) {
                             const child = firstChild.children[i];
 
-                            if (child.type === 'text' && child.value.includes('\n'))
-                            {
+                            if (child.type === 'text' && child.value.includes('\n')) {
                                 const textParts = child.value.split('\n');
-                                if (textParts[0])
-                                {
-                                    titleNodes.push({type: 'text', value: textParts[0]});
+                                if (textParts[0]) {
+                                    titleNodes.push({ type: 'text', value: textParts[0] });
                                 }
                                 // Keep the rest of the text for the body
                                 child.value = textParts.slice(1).join('\n').trimStart();
                                 splitIndex = i;
                                 break;
-                            } else if (child.tagName === 'br')
-                            {
+                            } else if (child.tagName === 'br') {
                                 splitIndex = i;
                                 break;
-                            } else
-                            {
+                            } else {
                                 titleNodes.push(child);
                             }
                         }
 
                         // 3. Remove the extracted title nodes from the body paragraph
-                        if (splitIndex !== -1)
-                        {
-                            if (firstChild.children[splitIndex].tagName === 'br')
-                            {
+                        if (splitIndex !== -1) {
+                            if (firstChild.children[splitIndex].tagName === 'br') {
                                 firstChild.children.splice(0, splitIndex + 1);
-                            } else
-                            {
+                            } else {
                                 firstChild.children.splice(0, splitIndex);
                             }
-                        } else
-                        {
+                        } else {
                             firstChild.children = []; // Entire paragraph was the title
                         }
 
                         // Clean up leading empty text node in body if any
-                        if (firstChild.children.length > 0 && firstChild.children[0].type === 'text' && !firstChild.children[0].value.trim())
-                        {
+                        if (firstChild.children.length > 0 && firstChild.children[0].type === 'text' && !firstChild.children[0].value.trim()) {
                             firstChild.children.shift();
                         }
 
@@ -300,31 +266,30 @@ const rehypeObsidianCallouts = () =>
                         const typeName = defaults[calloutType] || calloutType.charAt(0).toUpperCase() + calloutType.slice(1);
                         let displayTitlePrefix = `${typeName}${numberStr}`;
 
-                        let titleInnerChildren: any[] = [{type: 'text', value: displayTitlePrefix}];
+                        let titleInnerChildren: any[] = [{ type: 'text', value: displayTitlePrefix }];
 
                         // Check if there's an actual user title
                         const hasUserTitle = titleNodes.length > 0 && !(titleNodes.length === 1 && titleNodes[0].type === 'text' && !titleNodes[0].value.trim());
 
-                        if (hasUserTitle)
-                        {
-                            titleInnerChildren.push({type: 'text', value: ' ('});
+                        if (hasUserTitle) {
+                            titleInnerChildren.push({ type: 'text', value: ' (' });
                             titleInnerChildren.push(...titleNodes); // Inject the math nodes!
-                            titleInnerChildren.push({type: 'text', value: ')'});
+                            titleInnerChildren.push({ type: 'text', value: ')' });
                         }
 
                         // 5. Transform the HTML structure
                         node.tagName = 'div';
-                        node.properties = {className: ['callout'], 'data-callout': calloutType};
+                        node.properties = { className: ['callout'], 'data-callout': calloutType };
 
                         const titleNode = {
                             type: 'element',
                             tagName: 'div',
-                            properties: {className: ['callout-title']},
+                            properties: { className: ['callout-title'] },
                             children: [
                                 {
                                     type: 'element',
                                     tagName: 'div',
-                                    properties: {className: ['callout-title-inner']},
+                                    properties: { className: ['callout-title-inner'] },
                                     children: titleInnerChildren // Pass the structured nodes directly
                                 }
                             ]
@@ -333,7 +298,7 @@ const rehypeObsidianCallouts = () =>
                         const contentNode = {
                             type: 'element',
                             tagName: 'div',
-                            properties: {className: ['callout-content']},
+                            properties: { className: ['callout-content'] },
                             children: [...node.children]
                         };
 
@@ -345,22 +310,17 @@ const rehypeObsidianCallouts = () =>
     };
 };
 
-const remarkDesmos = () => (tree: any) =>
-{
-    visit(tree, 'code', (node: any) =>
-    {
-        if (node.lang === 'desmos-graph')
-        {
+const remarkDesmos = () => (tree: any) => {
+    visit(tree, 'code', (node: any) => {
+        if (node.lang === 'desmos-graph') {
             const parts = node.value.split('---');
             let configStr = '';
             let eqStr = '';
 
-            if (parts.length >= 2)
-            {
+            if (parts.length >= 2) {
                 configStr = parts[0].trim();
                 eqStr = parts[1].trim();
-            } else
-            {
+            } else {
                 eqStr = parts[0].trim();
             }
 
@@ -383,29 +343,24 @@ const remarkDesmos = () => (tree: any) =>
     });
 };
 
-export async function renderMarkdownContent(markdownContent: string)
-{
+export async function renderMarkdownContent(markdownContent: string) {
     const originalWarn = console.warn;
-    console.warn = (...args) =>
-    {
+    console.warn = (...args) => {
         if (typeof args[0] === 'string' && args[0].includes('No character metrics')) return;
         originalWarn(...args);
     };
 
     var chapterPrefix = "";
     const titleMatch = markdownContent.match(/^title:\s*"(\d+)[^"]*"/m);
-    if (titleMatch)
-    {
+    if (titleMatch) {
         chapterPrefix = parseInt(titleMatch[1], 10) + '.';
     }
 
     let masterLinkMap: Record<string, string> = {};
-    try
-    {
+    try {
         const mapPath = path.join(VAULT_DIRECTORY, 'link-map.json');
         masterLinkMap = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
-    } catch (e)
-    {
+    } catch (e) {
     }
 
     var chapterPrefix = "";
@@ -416,16 +371,12 @@ export async function renderMarkdownContent(markdownContent: string)
     const mathCellMap = new Map<string, string>();
     let mathCellCounter = 0;
 
-    const preRenderTableMath = (content: string): string =>
-    {
-        return content.split('\n').map(line =>
-        {
+    const preRenderTableMath = (content: string): string => {
+        return content.split('\n').map(line => {
             if (!line.trim().startsWith('|')) return line;
 
-            return line.replace(/\$([^$]+)\$/g, (match, mathContent) =>
-            {
-                try
-                {
+            return line.replace(/\$([^$]+)\$/g, (match, mathContent) => {
+                try {
                     const fixed = mathContent.replace(/\\\|/g, '|');
                     const rendered = katex.renderToString(fixed, {
                         throwOnError: false,
@@ -446,8 +397,7 @@ export async function renderMarkdownContent(markdownContent: string)
                     const key = `PRETABLE${mathCellCounter++}END`;
                     mathCellMap.set(key, rendered);
                     return key;
-                } catch
-                {
+                } catch {
                     return match;
                 }
             });
@@ -463,11 +413,10 @@ export async function renderMarkdownContent(markdownContent: string)
         .replace(/^[ \t]+(>)/gm, '$1')
         .replace(/^>(\[!.*?\])/gm, '> $1')
         .replace(/^(>+)[ \t]+\$\$/gm, (match, arrows) => `${arrows} $$`) // Snaps over-indented $$ inside blockquotes
-                                                                         // back to the safe margin
+        // back to the safe margin
         .replace(/^[ \t]+\$\$/gm, '$$') // Snaps over-indented $$ in regular lists back to the safe margin
         .replace(/(?:\n|\s)\^([a-zA-Z0-9]{5,})(?=\s|$)/g, '\n<a id="$1" class="obsidian-block-anchor"></a>\n')
-        .replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, filename, meta) =>
-        {
+        .replace(/!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, filename, meta) => {
             let cleanFilename = filename.trim().replace(/\\$/, '').replace(/\\/g, '/');
             if (cleanFilename.endsWith('.excalidraw')) cleanFilename += '.svg';
 
@@ -475,27 +424,22 @@ export async function renderMarkdownContent(markdownContent: string)
             let widthAttr = "";
             let heightAttr = "";
 
-            if (meta)
-            {
+            if (meta) {
                 // 1. Check for width x height (e.g., 400x200)
                 const dimMatch = meta.match(/^(\d+)x(\d+)/);
-                if (dimMatch)
-                {
+                if (dimMatch) {
                     widthAttr = ` width="${dimMatch[1]}"`;
                     heightAttr = ` height="${dimMatch[2]}"`;
                     styles = `style="width: ${dimMatch[1]}px; height: ${dimMatch[2]}px; object-fit: contain;"`;
-                } else
-                {
+                } else {
                     // 2. Check for width only (e.g., 400)
                     const widthMatch = meta.match(/^(\d+)/);
-                    if (widthMatch)
-                    {
+                    if (widthMatch) {
                         widthAttr = ` width="${widthMatch[1]}"`;
                         styles = `style="width: ${widthMatch[1]}px; height: auto;"`;
                     }
                 }
-            } else
-            {
+            } else {
                 widthAttr = ` width="400"`;
                 styles = 'style="width: 400px; height: auto;"';
             }
@@ -505,8 +449,7 @@ export async function renderMarkdownContent(markdownContent: string)
             // Using dangerouslySetInnerHTML requires standard img tags for string injection
             return `&#8203;<img src="${safeUrl}"${widthAttr}${heightAttr} ${styles} class="obsidian-image" alt="${cleanFilename}" loading="lazy" />`;
         })
-        .replace(/(?<!\!)\[\[(.*?)\]\]/g, (match, linkContent) =>
-        {
+        .replace(/(?<!\!)\[\[(.*?)\]\]/g, (match, linkContent) => {
             const parts = linkContent.replace(/\\\|/g, '|').split('|');
             let target = parts[0];
             const title = parts[1] || target.split(/[/\\]/).pop();
@@ -514,8 +457,7 @@ export async function renderMarkdownContent(markdownContent: string)
             let baseFile = target;
             let hash = '';
             const hashIndex = target.indexOf('#');
-            if (hashIndex !== -1)
-            {
+            if (hashIndex !== -1) {
                 baseFile = target.substring(0, hashIndex);
                 hash = target.substring(hashIndex).replace('#^', '#');
             }
@@ -523,8 +465,7 @@ export async function renderMarkdownContent(markdownContent: string)
             baseFile = baseFile.split(/[/\\]/).pop() || '';
 
             // Ignore empty links (like internal section jumps [[#^equation]])
-            if (!baseFile)
-            {
+            if (!baseFile) {
                 const emptyLinkHtml = `<a href="${hash}" class="theme-link">${title}</a>`;
                 const placeholder = `OBSIDIANLINK${linkCounter++}X`;
                 linkMap.set(placeholder, emptyLinkHtml);
@@ -534,8 +475,7 @@ export async function renderMarkdownContent(markdownContent: string)
             // Look up the exact Hebrew name in the Master Map!
             let fullPath = masterLinkMap[baseFile];
 
-            if (!fullPath)
-            {
+            if (!fullPath) {
                 console.log(`❌ LINK FAILED: Could not find "${baseFile}" in link-map.json!`);
                 fullPath = `/${baseFile}`; // Fallback
             }
@@ -547,12 +487,10 @@ export async function renderMarkdownContent(markdownContent: string)
             return placeholder;
         })
         .replace(/`?\\end\{proof\}`?/g, '<span class="halmos">∎</span>')
-        .replace(/:([a-zA-Z0-9_-]+):/g, (match, iconName) =>
-        {
+        .replace(/:([a-zA-Z0-9_-]+):/g, (match, iconName) => {
             const svgString = IconMap[iconName];
 
-            if (svgString)
-            {
+            if (svgString) {
                 return `<span class="inline-flex items-center align-middle mx-1">${svgString}</span>`;
             }
 
@@ -560,8 +498,7 @@ export async function renderMarkdownContent(markdownContent: string)
             return match;
         });
 
-    try
-    {
+    try {
         const processor = unified()
             .use(remarkParse)
             .use(remarkGfm)
@@ -572,11 +509,12 @@ export async function renderMarkdownContent(markdownContent: string)
             .use(remarkDesmos)
             .use(remarkMath)
             .use(remarkFrontmatter, ['yaml'])
-            .use(remarkRehype, {allowDangerousHtml: true})
+            .use(remarkRehype, { allowDangerousHtml: true })
             .use(rehypeRaw)
             .use(rehypeHighlight)
             .use(rehypeObsidianCallouts)
             .use(rehypeSlug)
+            .use(extractTOCPlugin) // Must run BEFORE rehypeKatex so it sees raw inlineMath nodes
             .use(rehypeKatex, {
                 trust: true,
                 strict: "ignore",
@@ -592,19 +530,16 @@ export async function renderMarkdownContent(markdownContent: string)
                     "\\uptau": "\\tau",
                 }
             })
-            .use(extractTOCPlugin)
-            .use(rehypeStringify, {allowDangerousHtml: true});
+            .use(rehypeStringify, { allowDangerousHtml: true });
 
         const file = await processor.process(processedContent);
         let contentHtml = file.toString();
 
-        for (const [placeholder, html] of linkMap.entries())
-        {
+        for (const [placeholder, html] of linkMap.entries()) {
             contentHtml = contentHtml.split(placeholder).join(html);
         }
 
-        for (const [key, rendered] of mathCellMap.entries())
-        {
+        for (const [key, rendered] of mathCellMap.entries()) {
             contentHtml = contentHtml.split(key).join(rendered);
         }
 
@@ -616,8 +551,7 @@ export async function renderMarkdownContent(markdownContent: string)
             contentHtml: contentHtml,
             toc: file.data.toc || []
         };
-    } finally
-    {
+    } finally {
         console.warn = originalWarn;
     }
 }

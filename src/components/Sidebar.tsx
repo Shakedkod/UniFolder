@@ -10,7 +10,6 @@ import BackButton from "./NoteComponents/BackButton";
 import RenderMD from "./MarkdownRendererForInline";
 import ThemeMenu from "./ThemeMenu";
 import PrintTitlePage from "./Note/pdf/TitlePageForPDF";
-import path from "path";
 
 interface NavigatorContent {
     title: string;
@@ -208,75 +207,81 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
     }, [isMenuOpen]);
 
 
-    const contentList = (
-        <ul className="flex flex-col space-y-2 pb-8">
-            {content.toc?.map((item: TocItem) => {
-                const isSectionActive = activeHeadingId === item.id;
-                const hasCallouts = item.callouts && item.callouts.length > 0;
-                const isExpanded = manualToggleState[item.id] !== undefined
-                    ? manualToggleState[item.id]
-                    : isSectionActive;
+    // Extracted as a proper component so each placement (desktop sidebar + mobile drawer)
+    // gets its own independent React subtree. Sharing a single JSX element across two
+    // parts of the DOM causes MathJax useEffects inside RenderMD to misfire — either
+    // not running at all, or running 3× on the wrong nodes.
+    function TocList() {
+        return (
+            <ul className="flex flex-col space-y-2 pb-8">
+                {content.toc?.map((item: TocItem) => {
+                    const isSectionActive = activeHeadingId === item.id;
+                    const hasCallouts = item.callouts && item.callouts.length > 0;
+                    const isExpanded = manualToggleState[item.id] !== undefined
+                        ? manualToggleState[item.id]
+                        : isSectionActive;
 
-                return (
-                    <li
-                        key={item.id}
-                        data-toc-id={item.id}
-                        className="my-1 flex flex-col relative"
-                        style={{ paddingRight: `${(item.level - 1) * 1.25}rem` }}
-                    >
-                        {/* THE WRAPPER: Now a flex row to hold the title and the dropdown button */}
-                        <div className={`transition-all duration-200 flex items-center justify-between border-r-2 ${isSectionActive
-                            ? "text-highlight bg-highlight/10 border-highlight font-bold"
-                            : "border-transparent hover:text-accent2-foreground hover:bg-foreground/5"
-                            } ${levelStyles[item.level] || "text-sm pr-2"}`}
+                    return (
+                        <li
+                            key={item.id}
+                            data-toc-id={item.id}
+                            className="my-1 flex flex-col relative"
+                            style={{ paddingRight: `${(item.level - 1) * 1.25}rem` }}
                         >
-                            <a
-                                href={`#${item.id}`}
-                                onClick={() => setIsMenuOpen(false)}
-                                className="flex-1 py-1"
+                            {/* THE WRAPPER: Now a flex row to hold the title and the dropdown button */}
+                            <div className={`transition-all duration-200 flex items-center justify-between border-r-2 ${isSectionActive
+                                ? "text-highlight bg-highlight/10 border-highlight font-bold"
+                                : "border-transparent hover:text-accent2-foreground hover:bg-foreground/5"
+                                } ${levelStyles[item.level] || "text-sm pr-2"}`}
                             >
-                                <RenderMD content={item.title} />
-                            </a>
-
-                            {/* THE TOGGLE BUTTON */}
-                            {hasCallouts && (
-                                <button
-                                    onClick={(e) => toggleGroup(e, item.id)}
-                                    className="p-1.5 ml-1 rounded-md opacity-50 hover:opacity-100 hover:bg-foreground/10 transition-all"
-                                    aria-label="Toggle Subsections"
+                                <a
+                                    href={`#${item.id}`}
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className="flex-1 py-1"
                                 >
-                                    {/* ChevronLeft is used for closed state because of RTL layout */}
-                                    {isExpanded ? <ChevronDown size={14} /> : <ChevronLeft size={14} />}
-                                </button>
-                            )}
-                        </div>
+                                    <RenderMD content={item.title} />
+                                </a>
 
-                        {/* THE CALLOUTS (Conditionally rendered based on 'isExpanded' state) */}
-                        {hasCallouts && isExpanded && (
-                            <ul className="flex flex-col mt-1 pr-3 border-r border-accent2-border/30 mr-2 space-y-1 toc-callout-list">
-                                {item.callouts.map((callout) => (
-                                    <li key={callout.id} className="toc-callout-item" data-toc-id={callout.id}>
-                                        <a
-                                            href={`#${callout.id}`}
-                                            onClick={() => setIsMenuOpen(false)}
-                                            className={`transition-all duration-200 flex items-center py-1.5 pr-2 text-[11px] font-medium rounded-l-md ${activeId === callout.id
-                                                ? "text-highlight bg-highlight/10"
-                                                : "text-foreground-heading-sidebar-5 hover:text-accent2-foreground hover:bg-foreground/5"
-                                                }`}
-                                        >
-                                            {/* Render the specific icon for this callout type */}
-                                            {getCalloutIcon(callout.type)}
-                                            <span className="flex-1"><RenderMD content={callout.title} /></span>
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </li>
-                );
-            })}
-        </ul>
-    );
+                                {/* THE TOGGLE BUTTON */}
+                                {hasCallouts && (
+                                    <button
+                                        onClick={(e) => toggleGroup(e, item.id)}
+                                        className="p-1.5 ml-1 rounded-md opacity-50 hover:opacity-100 hover:bg-foreground/10 transition-all"
+                                        aria-label="Toggle Subsections"
+                                    >
+                                        {/* ChevronLeft is used for closed state because of RTL layout */}
+                                        {isExpanded ? <ChevronDown size={14} /> : <ChevronLeft size={14} />}
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* THE CALLOUTS (Conditionally rendered based on 'isExpanded' state) */}
+                            {hasCallouts && isExpanded && (
+                                <ul className="flex flex-col mt-1 pr-3 border-r border-accent2-border/30 mr-2 space-y-1 toc-callout-list">
+                                    {item.callouts.map((callout) => (
+                                        <li key={callout.id} className="toc-callout-item" data-toc-id={callout.id}>
+                                            <a
+                                                href={`#${callout.id}`}
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className={`transition-all duration-200 flex items-center py-1.5 pr-2 text-[11px] font-medium rounded-l-md ${activeId === callout.id
+                                                    ? "text-highlight bg-highlight/10"
+                                                    : "text-foreground-heading-sidebar-5 hover:text-accent2-foreground hover:bg-foreground/5"
+                                                    }`}
+                                            >
+                                                {/* Render the specific icon for this callout type */}
+                                                {getCalloutIcon(callout.type)}
+                                                <span className="flex-1"><RenderMD content={callout.title} /></span>
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </li>
+                    );
+                })}
+            </ul>
+        );
+    }
 
     return (<>
         {/* ---------------------- DESKTOP SIDEBAR ---------------------- */}
@@ -315,7 +320,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
             </div>
 
             <FadingScrollContainer activeHeadingId={activeId}>
-                {contentList}
+                <TocList />
             </FadingScrollContainer>
 
             <div className="w-full shrink-0 pt-6 mt-2 border-t border-accent2-border">
@@ -369,7 +374,7 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
                     </div>
 
                     <FadingScrollContainer activeHeadingId={activeId}>
-                        {contentList}
+                        <TocList />
                     </FadingScrollContainer>
 
                     <div className="w-full shrink-0 pt-4 mt-2 border-t border-foreground/10">
