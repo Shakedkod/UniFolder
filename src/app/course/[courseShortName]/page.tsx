@@ -30,14 +30,18 @@ const COURSE_SHORT_NAME_TO_URL: { [key: string]: string } = {
     "semester6": "/2027/semester-b"
 }
 
-export default async function RedirectPage({ params }: { params: { courseShortName: string[] } })
+export default async function RedirectPage({ params }: { params: { courseShortName: string } })
 {
     const resolvedParams = await params;
-    const courseShortName = resolvedParams.courseShortName[0];
+    const courseShortName = resolvedParams.courseShortName;
 
     // Redirect to the course's main page
-    if (COURSE_SHORT_NAME_TO_URL[courseShortName])
+    if (courseShortName in COURSE_SHORT_NAME_TO_URL)
     {
         redirect(COURSE_SHORT_NAME_TO_URL[courseShortName]);
+    }
+    else
+    {
+        redirect("/2025");
     }
 }
