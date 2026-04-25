@@ -9,7 +9,7 @@ import { exit } from 'process';
 
 // CLOUD CONFIGURATION
 const GITHUB_PAT = process.env.GITHUB_PAT;
-const VAULT_REPO = 'github.com/ShakedKod/ShakedKodPrivate.git';
+const VAULT_REPO = process.env.VAULT_REPO;
 
 const TEMP_DIR = path.join(process.cwd(), 'temp_vault');
 const PUBLIC_IMAGES_DIR = path.join(process.cwd(), 'public', 'vault-images');
