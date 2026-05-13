@@ -27,16 +27,13 @@ const IconMap: Record<string, string> = {
 
 // The TOC Extractor
 function extractTitleText(children: any[]): string {
-    console.log('Extracting title text from children:', children);
     let result = '';
     for (const child of children) {
         if (child.type === 'text') {
             result += child.value;
         } else if (child.tagName === 'span' && child.properties?.className?.includes('math-inline')) {
             const rawLatex = child.children?.find((c: any) => c.type === 'text')?.value;
-            console.log('Extracted inline math for TOC title:', rawLatex);
             if (rawLatex) result += `$${rawLatex}$`;
-            console.log('Current extracted title text:', result);
         } else if (child.children?.length) {
             // Recurse into em, strong, code, a, etc.
             result += extractTitleText(child.children);

@@ -285,7 +285,11 @@ async function passTwoCompileFiles(destDir: string) {
             if (ext === '.md') {
                 const { data } = matter(content);
                 if (data.title) originalName = data.title;
-                if (data.pub_date && new Date(data.pub_date) <= new Date()) continue; // Skip future-dated notes
+                if (data.pub_date && new Date(data.pub_date) >= new Date())
+                {
+                    fs.unlinkSync(fullPath);
+                    continue; // Skip future-dated notes
+                }
             }
 
             let cleanContent = content;
