@@ -78,6 +78,16 @@
     fill: var(--accent-background) !important;
 }
 
+.night .stroke-B1, .deep-ocean .stroke-B1
+{
+    stroke: var(--foreground) !important;
+}
+
+.night .fill-N2, .deep-ocean .fill-N2
+{
+    fill: var(--foreground) !important;
+}
+
 .dark .fill-B4
 {
     fill: var(--really-light-accent-border) !important;
