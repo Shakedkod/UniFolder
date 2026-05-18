@@ -43,7 +43,6 @@ function extractTitleText(children: any[]): string {
 }
 
 const extractTOCPlugin = () => (tree: any, file: any) => {
-    console.log('Starting TOC extraction...');
     file.data.toc = [];
     let currentHeading: any = null;
     const slugger = new GithubSlugger();
@@ -406,6 +405,8 @@ export async function renderMarkdownContent(markdownContent: string) {
         .replace(/^\|[ \t]*:?-+:?[ \t]*(?=\|)/gm, (match) => match.replace(/[ \t]/g, ''))
         .replace(/^([ \t]*(?:>[ \t]*)*)\$\$(.+?)\$\$[ \t]*$/gm, (match, prefix, equation) => `${prefix}$$\n${prefix}${equation.trim()}\n${prefix}$$`)
         .replace(/\\begin\{align\}([\s\S]*?)\\end\{align\}/g, '\\begin{align*}$1\\end{align*}')
+        .replace(/\\begin\{gather\}([\s\S]*?)\\end\{gather\}/g, '\\begin{align*}$1\\end{align*}')
+        .replace(/\\begin\{gather\*\}([\s\S]*?)\\end\{gather\*\}/g, '\\begin{align*}$1\\end{align*}')
         .replace(/(^|\n)(?![ \t]*>)([^\n]+)\r?\n([ \t]*>)/g, '$1$2\n\n$3')
         .replace(/^[ \t]+(>)/gm, '$1')
         .replace(/^>(\[!.*?\])/gm, '> $1')
