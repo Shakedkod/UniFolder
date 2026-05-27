@@ -405,8 +405,8 @@ export async function renderMarkdownContent(markdownContent: string) {
         .replace(/^\|[ \t]*:?-+:?[ \t]*(?=\|)/gm, (match) => match.replace(/[ \t]/g, ''))
         .replace(/^([ \t]*(?:>[ \t]*)*)\$\$(.+?)\$\$[ \t]*$/gm, (match, prefix, equation) => `${prefix}$$\n${prefix}${equation.trim()}\n${prefix}$$`)
         .replace(/\\begin\{align\}([\s\S]*?)\\end\{align\}/g, '\\begin{align*}$1\\end{align*}')
-        .replace(/\\begin\{gather\}([\s\S]*?)\\end\{gather\}/g, '\\begin{align*}$1\\end{align*}')
-        .replace(/\\begin\{gather\*\}([\s\S]*?)\\end\{gather\*\}/g, '\\begin{align*}$1\\end{align*}')
+        .replace(/\$\\begin\{gather\*?\}([\s\S]*?)\\end\{gather\*?\}\$/g, 
+            (_, inner) => `$\\displaystyle ${inner.trim()}$`)
         .replace(/(^|\n)(?![ \t]*>)([^\n]+)\r?\n([ \t]*>)/g, '$1$2\n\n$3')
         .replace(/^[ \t]+(>)/gm, '$1')
         .replace(/^>(\[!.*?\])/gm, '> $1')
@@ -517,6 +517,7 @@ export async function renderMarkdownContent(markdownContent: string) {
                 trust: true,
                 strict: "ignore",
                 macros: {
+                    "\\Tiny": "\\tiny",
                     "\\R": "\\htmlStyle{direction: rtl; unicode-bidi: isolate; display: inline-block;}{\\text{#1}}",
                     "\\underbracket": "\\mathop{\\htmlClass{sq-bracket}{#1\\rule[-0.4em]{0pt}{0pt}}}\\limits",
                     "\\overbracket": "\\mathop{\\htmlClass{sq-overbracket}{\\rule{0pt}{1.3em}#1}}\\limits",
