@@ -11,12 +11,23 @@ import rehypeStringify from 'rehype-stringify';
 import remarkBreaks from 'remark-breaks';
 import { visit } from 'unist-util-visit';
 import { instance } from '@viz-js/viz';
-import rehypeHighlight from 'rehype-highlight';
 import GithubSlugger from 'github-slugger';
+import rehypeHighlight from 'rehype-highlight';
 import fs from 'fs';
 import path from 'path';
 import { VAULT_DIRECTORY } from './vault';
 import katex from 'katex';
+
+import hljs from 'highlight.js';
+import x86asm from 'highlight.js/lib/languages/x86asm'
+import verilog from 'highlight.js/lib/languages/verilog'
+
+hljs.registerLanguage('asm', x86asm);
+hljs.registerLanguage('x86asm', x86asm);
+hljs.registerLanguage('nasm', x86asm);
+hljs.registerLanguage('riscv', x86asm);
+hljs.registerLanguage('systemverilog', verilog);
+hljs.registerLanguage('sv', verilog);
 
 import 'katex/dist/contrib/mhchem';
 
