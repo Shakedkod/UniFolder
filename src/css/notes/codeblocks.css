@@ -74,46 +74,84 @@ pre {
 .pseudocode-wrapper {
     direction: ltr;
     margin: 1.5rem 0;
-    padding: 1.25rem 1.5rem;
-    border-radius: 0.75rem;
-    border: 1px solid var(--code-border);
-    background: var(--code-bg);
-    color: var(--code-text);
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    border-top: 2px solid var(--foreground);
+    border-bottom: 2px solid var(--foreground);
+    background: transparent;
+    color: var(--foreground);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.875rem;
-    line-height: 1.7;
+    font-size: 0.9rem;
+    line-height: 1.8;
     overflow-x: auto;
 }
 
-.pseudocode-wrapper .ps-root {
-    margin: 0;
-}
-
-.pseudocode-wrapper .ps-keyword {
-    color: var(--code-keyword);
-    font-weight: 600;
-}
-
-.pseudocode-wrapper .ps-funcname {
-    color: var(--code-title);
-    font-weight: 600;
-}
-
-.pseudocode-wrapper .ps-comment {
-    color: var(--code-comment);
-    font-style: italic;
-}
-
-.pseudocode-wrapper .ps-linenum {
-    color: var(--code-comment);
-    user-select: none;
-    margin-left: 0.5rem;
-}
-
-.pseudocode-wrapper caption {
+/* Caption line: "Algorithm X  Title" with bottom rule */
+.pseudocode-wrapper .ps-root > .ps-algorithm > .ps-caption {
+    display: block;
     font-weight: 700;
-    font-size: 0.9em;
-    margin-bottom: 0.5rem;
-    color: var(--code-title);
-    text-align: left;
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--foreground);
+    margin-bottom: 0.4rem;
+    color: var(--foreground);
+}
+
+/* "Algorithm N" label inside caption */
+.pseudocode-wrapper .ps-root > .ps-algorithm > .ps-caption > span:first-child {
+    font-variant: small-caps;
+}
+
+/* Remove the default outer border pseudocode.js adds */
+.pseudocode-wrapper .ps-root > .ps-algorithm {
+    border: none !important;
+    padding: 0.5rem 0;
+}
+
+/* Keywords: for, do, end, return, if, etc. */
+.pseudocode-wrapper .ps-keyword {
+    color: var(--foreground);
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* Function names */
+.pseudocode-wrapper .ps-funcname {
+    color: var(--foreground);
+    font-weight: 700;
+}
+
+/* Comments — italic, right-aligned, pushed to the far right */
+.pseudocode-wrapper .ps-comment {
+    color: var(--foreground-heading-3);
+    font-style: italic;
+    float: right;
+    margin-left: 2rem;
+}
+
+/* Line numbers */
+.pseudocode-wrapper .ps-linenum {
+    color: var(--foreground-remark);
+    user-select: none;
+    margin-right: 0.75rem;
+}
+
+/* INPUT / OUTPUT special keywords */
+.pseudocode-wrapper .ps-keyword[data-keyword="INPUT"],
+.pseudocode-wrapper .ps-keyword[data-keyword="OUTPUT"] {
+    font-weight: 700;
+}
+
+/* Each statement line */
+.pseudocode-wrapper .ps-line {
+    display: block;
+    clear: both; /* so floated comments don't bleed into next line */
+    padding: 0.05rem 0;
+}
+
+/* Indented blocks */
+.pseudocode-wrapper .ps-block {
+    padding-left: 1.5rem;
 }
