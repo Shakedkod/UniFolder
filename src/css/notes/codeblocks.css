@@ -69,3 +69,51 @@ pre {
 .hljs-number {
     color: var(--code-number);
 }
+
+/* --- Pseudocode Blocks --- */
+.pseudocode-wrapper {
+    direction: ltr;
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--code-border);
+    background: var(--code-bg);
+    color: var(--code-text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    overflow-x: auto;
+}
+
+.pseudocode-wrapper .ps-root {
+    margin: 0;
+}
+
+.pseudocode-wrapper .ps-keyword {
+    color: var(--code-keyword);
+    font-weight: 600;
+}
+
+.pseudocode-wrapper .ps-funcname {
+    color: var(--code-title);
+    font-weight: 600;
+}
+
+.pseudocode-wrapper .ps-comment {
+    color: var(--code-comment);
+    font-style: italic;
+}
+
+.pseudocode-wrapper .ps-linenum {
+    color: var(--code-comment);
+    user-select: none;
+    margin-left: 0.5rem;
+}
+
+.pseudocode-wrapper caption {
+    font-weight: 700;
+    font-size: 0.9em;
+    margin-bottom: 0.5rem;
+    color: var(--code-title);
+    text-align: left;
+}

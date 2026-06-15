@@ -13,6 +13,7 @@ import { visit } from 'unist-util-visit';
 import { instance } from '@viz-js/viz';
 import GithubSlugger from 'github-slugger';
 import rehypeHighlight from 'rehype-highlight';
+import pseudocode from 'pseudocode';
 import fs from 'fs';
 import path from 'path';
 import { VAULT_DIRECTORY } from './vault';
@@ -317,6 +318,39 @@ const rehypeObsidianCallouts = () => {
     };
 };
 
+const remarkPseudocode = () => (tree: any) => {
+    visit(tree, 'code', (node: any) => {
+        if (node.lang !== 'pseudo') return;
+        try {
+            const rendered = pseudocode.renderToString(node.value, {
+                lineNumber: true,
+                noEnd: false,
+                mathEngine: 'katex',
+                mathRenderer: (math: string) => {
+                    try {
+                        return katex.renderToString(math, {
+                            throwOnError: false,
+                            trust: true,
+                            strict: 'ignore',
+                            macros: {
+                                "\\R": "\\htmlStyle{direction: rtl; unicode-bidi: isolate; display: inline-block;}{\\text{#1}}",
+                                "\\uptau": "\\tau",
+                            }
+                        });
+                    } catch {
+                        return math;
+                    }
+                }
+            });
+            node.type = 'html';
+            node.value = `<div class="pseudocode-wrapper">${rendered}</div>`;
+        } catch (e: any) {
+            node.type = 'html';
+            node.value = `<div style="color:#ef4444;border:1px solid #ef4444;padding:1rem;border-radius:0.5rem;" dir="ltr"><strong>Pseudocode Error:</strong><br/>${e.message}</div>`;
+        }
+    });
+};
+
 const remarkDesmos = () => (tree: any) => {
     visit(tree, 'code', (node: any) => {
         if (node.lang === 'desmos-graph') {
@@ -516,6 +550,7 @@ export async function renderMarkdownContent(markdownContent: string) {
             .use(remarkInGraph)
             .use(remarkD2)
             .use(remarkDesmos)
+            .use(remarkPseudocode)
             .use(remarkMath)
             .use(remarkFrontmatter, ['yaml'])
             .use(remarkRehype, { allowDangerousHtml: true })
