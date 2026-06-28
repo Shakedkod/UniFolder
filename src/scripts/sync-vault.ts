@@ -6,6 +6,7 @@ import { renderMarkdownContent } from '@/lib/processor';
 import { VAULT_DIRECTORY } from '@/lib/vault';
 import { PDFParse } from 'pdf-parse';
 import { exit } from 'process';
+import { parseStyMacros } from '@/lib/katex-macros';
 
 // CLOUD CONFIGURATION
 const GITHUB_PAT = process.env.GITHUB_PAT;
@@ -160,12 +161,10 @@ function generateSearchIndex(vaultTree: VaultItem[]) {
 
     function traverse(items: VaultItem[]) {
         for (const item of items) {
-            if (item.isDirectory) 
-            {
+            if (item.isDirectory) {
                 if (item.children) traverse(item.children);
             }
-            else 
-            {
+            else {
                 try {
                     const parsed = JSON.parse(fs.readFileSync(item.fullPath, 'utf8'));
                     const content = parsed.html || '';
@@ -210,10 +209,9 @@ async function processVaultFile(rawContent: string, filename: string, title: str
     fs.writeFileSync(path.join(destPath, filename + ".json"), JSON.stringify(compiledData));
 }
 
-async function processPDFFile(filePath: string, filename: string, title: string, destPath: string)
-{
+async function processPDFFile(filePath: string, filename: string, title: string, destPath: string) {
     const { text, toc } = await extractPdfText(filePath);
-    const jsonData = { 
+    const jsonData = {
         title,
         type: "pdf",
         toc: toc,
@@ -285,8 +283,7 @@ async function passTwoCompileFiles(destDir: string) {
             if (ext === '.md') {
                 const { data } = matter(content);
                 if (data.title) originalName = data.title;
-                if (data.pub_date && new Date(data.pub_date) >= new Date())
-                {
+                if (data.pub_date && new Date(data.pub_date) >= new Date()) {
                     fs.unlinkSync(fullPath);
                     continue; // Skip future-dated notes
                 }
@@ -321,6 +318,38 @@ function syncImages(srcDir: string) {
     }
 }
 
+function extractAndSavePreambleMacros(vaultSrcDir: string) {
+    // The vault's meta folder slug after transliteration is "99" (or similar).
+    // We walk the whole temp directory looking for any file named "preamble.sty".
+    function findFile(dir: string, filename: string): string | null {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                const found = findFile(full, filename);
+                if (found) return found;
+            } else if (entry.name === filename) {
+                return full;
+            }
+        }
+        return null;
+    }
+
+    const styPath = findFile(vaultSrcDir, 'preamble.sty');
+    if (!styPath) {
+        console.log('ℹ️  preamble.sty not found — skipping custom macro extraction.');
+        return;
+    }
+
+    console.log(`📐 Parsing LaTeX macros from ${styPath} ...`);
+    const { parseStyMacros } = require('@/lib/katex-macros');
+    const content = fs.readFileSync(styPath, 'utf8');
+    const macros = parseStyMacros(content);
+
+    const destPath = path.join(VAULT_DIRECTORY, 'preamble-macros.json');
+    fs.writeFileSync(destPath, JSON.stringify(macros, null, 2));
+    console.log(`✅ Saved ${Object.keys(macros).length} macros → preamble-macros.json`);
+}
+
 async function main() {
     console.log('🔒 Authenticating and cloning private vault...');
     if (!GITHUB_PAT) {
@@ -343,6 +372,9 @@ async function main() {
     if (fs.existsSync(SPECIFIC_FOLDER)) {
         console.log('🏗️ PASS 1: Building directory structure and copying raw files...');
         passOneBuildStructure(SPECIFIC_FOLDER, VAULT_DIRECTORY);
+
+        // Extract and save preamble macros if available
+        extractAndSavePreambleMacros(TEMP_DIR);
 
         // Save maps for the processor and sidebar!
         fs.writeFileSync(path.join(VAULT_DIRECTORY, 'folder-map.json'), JSON.stringify(autoFolderMap, null, 2));

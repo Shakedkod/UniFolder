@@ -18,6 +18,7 @@ import fs from 'fs';
 import path from 'path';
 import { VAULT_DIRECTORY } from './vault';
 import katex from 'katex';
+import { loadPreambleMacros } from './katex-macros';
 
 import hljs from 'highlight.js';
 import x86asm from 'highlight.js/lib/languages/x86asm'
@@ -424,6 +425,7 @@ export async function renderMarkdownContent(markdownContent: string) {
                         trust: true,
                         strict: 'ignore',
                         macros: {
+                            ...loadPreambleMacros(),
                             "\\R": "\\htmlStyle{direction: rtl; unicode-bidi: isolate; display: inline-block;}{\\text{#1}}",
                             "\\underbracket": "\\mathop{\\htmlClass{sq-bracket}{#1\\rule[-0.4em]{0pt}{0pt}}}\\limits",
                             "\\overbracket": "\\mathop{\\htmlClass{sq-overbracket}{\\rule{0pt}{1.3em}#1}}\\limits",
