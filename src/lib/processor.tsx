@@ -18,7 +18,6 @@ import fs from 'fs';
 import path from 'path';
 import { VAULT_DIRECTORY } from './vault';
 import katex from 'katex';
-import { loadPreambleMacros } from './katex-macros';
 
 import hljs from 'highlight.js';
 import x86asm from 'highlight.js/lib/languages/x86asm'
@@ -334,6 +333,7 @@ const remarkPseudocode = () => (tree: any) => {
                             trust: true,
                             strict: 'ignore',
                             macros: {
+                                ...loadPreambleMacros(),
                                 "\\R": "\\htmlStyle{direction: rtl; unicode-bidi: isolate; display: inline-block;}{\\text{#1}}",
                                 "\\uptau": "\\tau",
                             }
@@ -384,6 +384,14 @@ const remarkDesmos = () => (tree: any) => {
         }
     });
 };
+
+function loadPreambleMacros(): Record<string, string> {
+    try {
+        const p = path.join(VAULT_DIRECTORY, 'preamble-macros.json');
+        if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
+    } catch {}
+    return {};
+}
 
 export async function renderMarkdownContent(markdownContent: string) {
     const originalWarn = console.warn;
