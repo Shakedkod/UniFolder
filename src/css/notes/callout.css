@@ -62,7 +62,8 @@
 /* 5. Examples, Exercises, Hypotheses (Rounded Right Line) */
 .academic-preview .callout[data-callout="example"],
 .academic-preview .callout[data-callout="exercise"],
-.academic-preview .callout[data-callout="hypothesis"] {
+.academic-preview .callout[data-callout="hypothesis"],
+.academic-preview .callout[data-callout="proposition"] {
     position: relative;
     border: none;
     padding: 1rem 1.5rem 1rem 0;
@@ -71,7 +72,8 @@
 /* Draw the curved bracket using an empty box with only a right border */
 .academic-preview .callout[data-callout="example"]::before,
 .academic-preview .callout[data-callout="exercise"]::before,
-.academic-preview .callout[data-callout="hypothesis"]::before {
+.academic-preview .callout[data-callout="hypothesis"]::before,
+.academic-preview .callout[data-callout="proposition"]::before{
     content: '';
     position: absolute;
     top: 0;
@@ -118,6 +120,15 @@
 .academic-preview .callout[data-callout="hypothesis"] .callout-title {
     color: #ff99cc;
 }
+
+.academic-preview .callout[data-callout="proposition"]::before {
+    border-right-color: #ff6600;
+}
+
+.academic-preview .callout[data-callout="proposition"] .callout-title {
+    color: #ff6600;
+}
+
 
 /* 6. Custom Homework Callout */
 .academic-preview .callout[data-callout="hw"] {
