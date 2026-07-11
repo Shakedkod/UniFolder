@@ -385,6 +385,22 @@ const remarkDesmos = () => (tree: any) => {
     });
 };
 
+function resolveTocLinks(toc: any[], linkTextMap: Map<string, string>) {
+    for (const item of toc) {
+        for (const [placeholder, text] of linkTextMap.entries()) {
+            item.title = item.title.split(placeholder).join(text);
+        }
+        if (item.callouts) {
+            for (const callout of item.callouts) {
+                for (const [placeholder, text] of linkTextMap.entries()) {
+                    callout.title = callout.title.split(placeholder).join(text);
+                }
+            }
+        }
+    }
+    return toc;
+}
+
 function loadPreambleMacros(): Record<string, string> {
     try {
         const p = path.join(VAULT_DIRECTORY, 'preamble-macros.json');
@@ -417,7 +433,8 @@ export async function renderMarkdownContent(markdownContent: string) {
 
     const linkMap = new Map<string, string>();
     let linkCounter = 0;
-
+    
+    const linkTextMap = new Map<string, string>();
     const mathCellMap = new Map<string, string>();
     let mathCellCounter = 0;
 
@@ -426,18 +443,6 @@ export async function renderMarkdownContent(markdownContent: string) {
             if (!line.trim().startsWith('|')) return line;
 
             return line.replace(/\$([^$]+)\$/g, (match, mathContent) => {
-                console.log("Macros loaded:", {
-                    ...loadPreambleMacros(),
-                    "\\R": "\\htmlStyle{direction: rtl; unicode-bidi: isolate; display: inline-block;}{\\text{#1}}",
-                    "\\underbracket": "\\mathop{\\htmlClass{sq-bracket}{#1\\rule[-0.4em]{0pt}{0pt}}}\\limits",
-                    "\\overbracket": "\\mathop{\\htmlClass{sq-overbracket}{\\rule{0pt}{1.3em}#1}}\\limits",
-                    "\\overunderset": "\\overset{#1}{\\underset{#2}{#3}}",
-                    "\\cancel": "\\htmlClass{ma`th`-cancel}{#1}",
-                    "\\bcancel": "\\htmlClass{math-bcancel}{#1}",
-                    "\\xcancel": "\\htmlClass{math-xcancel}{#1}",
-                    "\\cases": "\\begin{cases} #1 \\end{cases}",
-                    "\\uptau": "\\tau"
-                });
                 try {
                     const fixed = mathContent.replace(/\\\|/g, '|');
                     const rendered = katex.renderToString(fixed, {
@@ -535,6 +540,7 @@ export async function renderMarkdownContent(markdownContent: string) {
                 const emptyLinkHtml = `<a href="${hash}" class="theme-link">${title}</a>`;
                 const placeholder = `OBSIDIANLINK${linkCounter++}X`;
                 linkMap.set(placeholder, emptyLinkHtml);
+                linkTextMap.set(placeholder, title);
                 return placeholder;
             }
 
@@ -549,6 +555,7 @@ export async function renderMarkdownContent(markdownContent: string) {
             const linkHtml = `<a href="${fullPath}${hash}" class="theme-link">${title}</a>`;
             const placeholder = `OBSIDIANLINK${linkCounter++}X`;
             linkMap.set(placeholder, linkHtml);
+            linkTextMap.set(placeholder, title);
 
             return placeholder;
         })
@@ -615,10 +622,11 @@ export async function renderMarkdownContent(markdownContent: string) {
         contentHtml = contentHtml
             .replace(/<table/g, '<div class="table-container"><table')
             .replace(/<\/table>/g, '</table></div>');
+        const resolvedToc = resolveTocLinks(Array.isArray(file.data.toc) ? file.data.toc : [], linkTextMap);
 
         return {
             contentHtml: contentHtml,
-            toc: file.data.toc || []
+            toc: resolvedToc
         };
     } finally {
         console.warn = originalWarn;
