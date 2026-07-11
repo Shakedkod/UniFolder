@@ -461,6 +461,7 @@ export async function renderMarkdownContent(markdownContent: string) {
                             "\\xcancel": "\\htmlClass{math-xcancel}{#1}",
                             "\\cases": "\\begin{cases} #1 \\end{cases}",
                             "\\uptau": "\\tau",
+                            "\\iiiint": "\\int\\!\\!\\!\\!\\int\\!\\!\\!\\!\\int\\!\\!\\!\\!\\int"
                         }
                     });
                     const key = `PRETABLE${mathCellCounter++}END`;
@@ -604,6 +605,7 @@ export async function renderMarkdownContent(markdownContent: string) {
                     "\\xcancel": "\\htmlClass{math-xcancel}{#1}",
                     "\\cases": "\\begin{cases} #1 \\end{cases}",
                     "\\uptau": "\\tau",
+                    "\\iiiint": "\\int\\!\\!\\!\\!\\int\\!\\!\\!\\!\\int\\!\\!\\!\\!\\int"
                 }
             })
             .use(rehypeStringify, { allowDangerousHtml: true });
