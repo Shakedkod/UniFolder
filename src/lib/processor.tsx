@@ -426,6 +426,18 @@ export async function renderMarkdownContent(markdownContent: string) {
             if (!line.trim().startsWith('|')) return line;
 
             return line.replace(/\$([^$]+)\$/g, (match, mathContent) => {
+                console.log("Macros loaded:", {
+                    ...loadPreambleMacros(),
+                    "\\R": "\\htmlStyle{direction: rtl; unicode-bidi: isolate; display: inline-block;}{\\text{#1}}",
+                    "\\underbracket": "\\mathop{\\htmlClass{sq-bracket}{#1\\rule[-0.4em]{0pt}{0pt}}}\\limits",
+                    "\\overbracket": "\\mathop{\\htmlClass{sq-overbracket}{\\rule{0pt}{1.3em}#1}}\\limits",
+                    "\\overunderset": "\\overset{#1}{\\underset{#2}{#3}}",
+                    "\\cancel": "\\htmlClass{ma`th`-cancel}{#1}",
+                    "\\bcancel": "\\htmlClass{math-bcancel}{#1}",
+                    "\\xcancel": "\\htmlClass{math-xcancel}{#1}",
+                    "\\cases": "\\begin{cases} #1 \\end{cases}",
+                    "\\uptau": "\\tau"
+                });
                 try {
                     const fixed = mathContent.replace(/\\\|/g, '|');
                     const rendered = katex.renderToString(fixed, {
@@ -434,6 +446,7 @@ export async function renderMarkdownContent(markdownContent: string) {
                         strict: 'ignore',
                         macros: {
                             ...loadPreambleMacros(),
+                            '\\parder': '\\frac{\\partial{#1}}{\\partial{#2}}',
                             "\\R": "\\htmlStyle{direction: rtl; unicode-bidi: isolate; display: inline-block;}{\\text{#1}}",
                             "\\underbracket": "\\mathop{\\htmlClass{sq-bracket}{#1\\rule[-0.4em]{0pt}{0pt}}}\\limits",
                             "\\overbracket": "\\mathop{\\htmlClass{sq-overbracket}{\\rule{0pt}{1.3em}#1}}\\limits",
@@ -573,6 +586,7 @@ export async function renderMarkdownContent(markdownContent: string) {
                 trust: true,
                 strict: "ignore",
                 macros: {
+                    ...loadPreambleMacros(),
                     "\\Tiny": "\\tiny",
                     "\\R": "\\htmlStyle{direction: rtl; unicode-bidi: isolate; display: inline-block;}{\\text{#1}}",
                     "\\underbracket": "\\mathop{\\htmlClass{sq-bracket}{#1\\rule[-0.4em]{0pt}{0pt}}}\\limits",
