@@ -149,6 +149,74 @@ async function extractPdfText(filePath: string): Promise<{ text: string; toc: an
     return { text: data.text, toc: tocData.outline || [] };
 }
 
+function generateLatex(title: string, markdown: string): string {
+    let body = markdown;
+
+    // Clean YAML frontmatter
+    body = body.replace(/^---[\s\S]*?---\n/, '');
+
+    // 1. Convert Headings
+    body = body.replace(/^# (.*$)/gm, '\\section*{$1}');
+    body = body.replace(/^## (.*$)/gm, '\\subsection*{$1}');
+    body = body.replace(/^### (.*$)/gm, '\\subsubsection*{$1}');
+
+    // 2. Convert Bold and Italic
+    body = body.replace(/\*\*(.*?)\*\*/g, '\\textbf{$1}');
+    body = body.replace(/(?<!\\)\*(.*?)\*/g, '\\textit{$1}'); // Ignores \*
+
+    // 3. Convert Obsidian Callouts to LaTeX environments
+    body = body.replace(/^> \[!(.*?)\](.*?)\n((?:>.*\n?)*)/gm, (match, type, calloutTitle, content) => {
+        let envName = type.toLowerCase().split('|')[0]; // Handle modifiers like [!theorem|*]
+
+        // Fallback to 'remark' if it's not a standard math environment
+        if (!['theorem', 'lemma', 'definition', 'corollary', 'remark', 'example', 'proof', 'axiom', 'claim'].includes(envName)) {
+            envName = 'remark';
+        }
+
+        const cleanContent = content.replace(/^> ?/gm, ''); // Remove blockquote arrows
+        const titleOpt = calloutTitle.trim() ? `[${calloutTitle.trim()}]` : '';
+        return `\\begin{${envName}}${titleOpt}\n${cleanContent}\\end{${envName}}\n`;
+    });
+
+    // 4. Clean up remaining blockquotes
+    body = body.replace(/^> (.*?)$/gm, '$1');
+
+    // 5. Convert Image Links
+    body = body.replace(/!\[\[([^\]|]+).*?\]\]/g, (match, file) => {
+        return `\\begin{figure}[h]\n\\centering\n\\includegraphics[width=0.8\\textwidth]{${file}}\n\\end{figure}`;
+    });
+
+    // Wrap in standard Hebrew LaTeX preamble
+    return `\\documentclass[a4paper,12pt]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[hebrew,english]{babel}
+\\usepackage{amsmath, amssymb, amsthm}
+\\usepackage{graphicx}
+\\usepackage{hyperref}
+\\usepackage{xcolor}
+
+% Define math environments
+\\newtheorem{theorem}{משפט}
+\\newtheorem{lemma}{למה}
+\\newtheorem{definition}{הגדרה}
+\\newtheorem{corollary}{מסקנה}
+\\newtheorem{axiom}{אקסיומה}
+\\newtheorem{claim}{טענה}
+\\newtheorem{example}{דוגמה}
+\\newtheorem{remark}{הערה}
+
+\\title{${title}}
+\\date{}
+
+\\begin{document}
+\\selectlanguage{hebrew}
+\\maketitle
+
+${body}
+
+\\end{document}`;
+}
+
 interface SearchIndexItem {
     title: string;
     path: string;
@@ -189,7 +257,8 @@ async function processVaultFile(rawContent: string, filename: string, title: str
     const cleanExt = extension.startsWith('.') ? extension.substring(1) : extension;
     const codeExtensions: { [key: string]: string } = {
         'c': 'c', 'h': 'c', 'cpp': 'cpp', 'hpp': 'cpp', 'java': 'java', 'py': 'python',
-        'js': 'javascript', 'ts': 'typescript', 'sh': 'bash', 'sql': 'sql', 'json': 'json', 'yaml': 'yaml', 'yml': 'yaml'
+        'js': 'javascript', 'ts': 'typescript', 'sh': 'bash', 'sql': 'sql', 'json': 'json', 'yaml': 'yaml', 'yml': 'yaml',
+        "sv": "systemverilog", "v": "verilog", "vhdl": "vhdl", "asm": "assembly", "hex": "assembly", "inc": "assembly", "s": "assembly", "bat": "batch", "cmd": "batch"
     };
 
     const isCodeFile = !!codeExtensions[cleanExt];
@@ -203,9 +272,18 @@ async function processVaultFile(rawContent: string, filename: string, title: str
         if (data.title) title = data.title;
     }
 
-    const { contentHtml, toc } = await renderMarkdownContent(markdownContent);
+    const { contentHtml, toc, latex } = await renderMarkdownContent(
+        markdownContent,
+        isCodeFile ? undefined : { title }
+    );
 
-    const compiledData = { title, type: isCodeFile ? "code" : "md", toc, html: contentHtml };
+    const compiledData: Record<string, unknown> = {
+        title,
+        type: isCodeFile ? "code" : "md",
+        toc,
+        html: contentHtml,
+        ...(latex ? { latex } : {}),
+    };
     fs.writeFileSync(path.join(destPath, filename + ".json"), JSON.stringify(compiledData));
 }
 
