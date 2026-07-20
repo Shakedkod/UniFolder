@@ -273,8 +273,7 @@ async function processVaultFile(rawContent: string, filename: string, title: str
     }
 
     const { contentHtml, toc } = await renderMarkdownContent(
-        markdownContent,
-        isCodeFile ? undefined : { title }
+        markdownContent
     );
 
     const compiledData: Record<string, unknown> = {
