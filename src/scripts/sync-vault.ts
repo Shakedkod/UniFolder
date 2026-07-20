@@ -272,7 +272,7 @@ async function processVaultFile(rawContent: string, filename: string, title: str
         if (data.title) title = data.title;
     }
 
-    const { contentHtml, toc, latex } = await renderMarkdownContent(
+    const { contentHtml, toc } = await renderMarkdownContent(
         markdownContent,
         isCodeFile ? undefined : { title }
     );
@@ -281,8 +281,7 @@ async function processVaultFile(rawContent: string, filename: string, title: str
         title,
         type: isCodeFile ? "code" : "md",
         toc,
-        html: contentHtml,
-        ...(latex ? { latex } : {}),
+        html: contentHtml
     };
     fs.writeFileSync(path.join(destPath, filename + ".json"), JSON.stringify(compiledData));
 }
