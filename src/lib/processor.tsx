@@ -18,6 +18,7 @@ import fs from 'fs';
 import path from 'path';
 import { VAULT_DIRECTORY } from './vault';
 import katex from 'katex';
+import { loadPreambleMacros } from './katex-macros';
 
 import hljs from 'highlight.js';
 import x86asm from 'highlight.js/lib/languages/x86asm'
@@ -78,39 +79,59 @@ const extractTOCPlugin = () => (tree: any, file: any) => {
 
         // B. Detect Callouts (Safely checks the data-callout attribute)
         else if (node.tagName === 'div' && node.properties?.['data-callout']) {
-            if (currentHeading) {
-                const calloutType = node.properties['data-callout'];
+            const calloutType = node.properties['data-callout'];
 
-                // Only index academic callouts (skip standard 'note', 'info', or 'warning')
-                const mathTypes = ['theorem', 'axiom', 'definition', 'claim', 'lemma', 'corollary', 'example', 'exercise', 'hypothesis'];
-                if (!mathTypes.includes(calloutType)) return;
+            // Only index academic callouts (skip standard 'note', 'info', or 'warning')
+            const mathTypes = ['theorem', 'axiom', 'definition', 'claim', 'lemma', 'corollary', 'example', 'exercise', 'hypothesis'];
+            if (!mathTypes.includes(calloutType)) return;
 
-                let title = '';
-                // Search children for the title wrapper we built earlier
-                visit(node, 'element', (child: any) => {
-                    if (child.properties?.className?.includes('callout-title-inner')) {
-                        visit(child, 'text', (textNode: any) => {
-                            title += textNode.value;
-                        });
-                    }
-                });
+            if (!currentHeading) {
+                currentHeading = {
+                    level: 1,
+                    id: 'intro',
+                    title: 'כללי',
+                    callouts: []
+                };
+                file.data.toc.push(currentHeading);
+            }
 
-                if (title) {
-                    title = title.trim();
-
-                    // 1. Generate a clean ID for the callout (e.g., "משפט-1")
-                    const calloutId = slugger.slug(title);
-
-                    // 2. INJECT the ID directly into the HTML node so the browser can scroll to it!
-                    node.properties.id = calloutId;
-
-                    // 3. Save it to our TOC array
-                    currentHeading.callouts.push({
-                        id: calloutId,
-                        title: title,
-                        type: calloutType
+            let title = '';
+            // Search children for the title wrapper we built earlier
+            visit(node, 'element', (child: any) => {
+                if (child.properties?.className?.includes('callout-title-inner')) {
+                    visit(child, 'text', (textNode: any) => {
+                        title += textNode.value;
                     });
                 }
+            });
+
+            // Extract content of callout (the mathematical formulation/statement)
+            let contentText = '';
+            visit(node, 'element', (child: any) => {
+                if (child.properties?.className?.includes('callout-content')) {
+                    visit(child, 'text', (textNode: any) => {
+                        contentText += textNode.value + ' ';
+                    });
+                }
+            });
+            contentText = contentText.replace(/\s+/g, ' ').trim().slice(0, 350);
+
+            if (title) {
+                title = title.trim();
+
+                // 1. Generate a clean ID for the callout (e.g., "משפט-1")
+                const calloutId = slugger.slug(title);
+
+                // 2. INJECT the ID directly into the HTML node so the browser can scroll to it!
+                node.properties.id = calloutId;
+
+                // 3. Save it to our TOC array with content
+                currentHeading.callouts.push({
+                    id: calloutId,
+                    title: title,
+                    type: calloutType,
+                    content: contentText
+                });
             }
         }
     });
@@ -401,13 +422,7 @@ function resolveTocLinks(toc: any[], linkTextMap: Map<string, string>) {
     return toc;
 }
 
-function loadPreambleMacros(): Record<string, string> {
-    try {
-        const p = path.join(VAULT_DIRECTORY, 'preamble-macros.json');
-        if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
-    } catch {}
-    return {};
-}
+// loadPreambleMacros is imported from ./katex-macros
 
 export async function renderMarkdownContent(markdownContent: string) {
     const originalWarn = console.warn;

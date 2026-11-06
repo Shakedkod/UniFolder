@@ -10,6 +10,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@mdtolatex/core": "file:./mdtolatex-ts/packages/core",
+    "@mdtolatex/node": "file:./mdtolatex-ts/packages/node",
     "@react-pdf-viewer/core": "^3.12.0",
     "@react-pdf-viewer/default-layout": "^3.12.0",
     "@react-pdf-viewer/page-navigation": "^3.12.0",
@@ -23,6 +25,7 @@
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.575.0",
+    "minisearch": "^7.2.0",
     "next": "16.1.6",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^3.11.174",

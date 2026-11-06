@@ -54,7 +54,7 @@ export default async function NoteContent({ currentSlug, parentUrl, parentName, 
         notFound();
     }
 
-    const { title, type, toc, html } = compiledData;
+    const { title, type, toc, html, latex, assets } = compiledData;
 
     if (type === "pdf") {
         const pdfStaticUrl = path.join(LIVE_VAULT_URL, ...currentSlug.slice(0, -1), rawFilename + ".pdf").replace(/\\/g, '/');
@@ -82,7 +82,16 @@ export default async function NoteContent({ currentSlug, parentUrl, parentName, 
 
     return (
         <div className="flex flex-col xl:flex-row items-start w-full min-h-screen relative">
-            <Sidebar content={{ title, toc, parent: { url: parentUrl, name: parentName }, course: { id: data.courseId ?? "", name: data.courseName }, isCourse: data.isCourse, type: data.subType }} />
+            <Sidebar content={{
+                title,
+                toc,
+                parent: { url: parentUrl, name: parentName },
+                course: { id: data.courseId ?? "", name: data.courseName },
+                isCourse: data.isCourse,
+                type: data.subType,
+                latex: latex as string | undefined,
+                assets: assets as { path: string; kind: string; isUrl: boolean }[] | undefined
+            }} />
 
             <main className="flex-1 min-w-0 px-8 py-6 w-full" dir="rtl">
                 <Suspense fallback={<Loading />}>

@@ -1,0 +1,10 @@
+{
+  "id": "mdtolatex",
+  "name": "MDtoLatex",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "Convert the active note to a LaTeX document, with support for callouts, wikilinks, math and Mermaid/DOT/Desmos diagrams.",
+  "author": "ShakedKod",
+  "authorUrl": "https://github.com/ShakedKod",
+  "isDesktopOnly": false
+}

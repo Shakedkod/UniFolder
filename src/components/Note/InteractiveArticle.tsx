@@ -16,6 +16,23 @@ function InteractiveArticle({ title, html, isCodeFile = false }: { title: string
     useEffect(() => {
         if (!articleRef.current) return;
 
+        // ── 0. Smooth scroll to hash anchor (theorems, definitions, headings) ─
+        if (typeof window !== "undefined" && window.location.hash) {
+            try {
+                const targetId = decodeURIComponent(window.location.hash.substring(1));
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    setTimeout(() => {
+                        targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                        targetElement.classList.add("ring-2", "ring-highlight", "ring-offset-2", "transition-all");
+                        setTimeout(() => {
+                            targetElement.classList.remove("ring-2", "ring-highlight", "ring-offset-2");
+                        }, 2500);
+                    }, 150);
+                }
+            } catch (e) { }
+        }
+
         // ── 1. Render in-graph placeholders ──────────────────────────────────
         renderInGraphPlaceholders(articleRef.current);
 

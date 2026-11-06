@@ -1,0 +1,19 @@
+{
+  "name": "@mdtolatex/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Command-line front-end for @mdtolatex/core (replaces the Python wizard)",
+  "type": "module",
+  "bin": { "mdtolatex": "./dist/cli.js" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node --import tsx src/cli.ts"
+  },
+  "dependencies": { "@mdtolatex/core": "*", "@mdtolatex/node": "*" },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.7.2"
+  }
+}

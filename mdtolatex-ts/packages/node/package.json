@@ -1,0 +1,21 @@
+{
+  "name": "@mdtolatex/node",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Node-side export pipeline: SVG rendering, bundling and PDF compilation, shared by the CLI and build-time scripts",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "dependencies": { "@mdtolatex/core": "*" },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.7.2"
+  }
+}

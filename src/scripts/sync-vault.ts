@@ -7,6 +7,7 @@ import { VAULT_DIRECTORY } from '@/lib/vault';
 import { PDFParse } from 'pdf-parse';
 import { exit } from 'process';
 import { parseStyMacros } from '@/lib/katex-macros';
+import { convert } from '@mdtolatex/core';
 
 // CLOUD CONFIGURATION
 const GITHUB_PAT = process.env.GITHUB_PAT;
@@ -90,7 +91,8 @@ function getVaultTree(dir: string = VAULT_DIRECTORY, currentPath: string = ''): 
     const tree = [];
 
     for (const entry of entries) {
-        if (entry.name.startsWith('.') || entry.name === 'folder-map.json' || entry.name === 'link-map.json') continue;
+        if (entry.name.startsWith('.') || entry.name === 'folder-map.json' || entry.name === 'link-map.json' ||
+            entry.name === 'preamble-macros.json') continue;
 
         const fullPath = path.join(dir, entry.name);
         const slug = entry.name.replace(/\.json$/, '').replace(/\.md$/, '');
@@ -149,108 +151,188 @@ async function extractPdfText(filePath: string): Promise<{ text: string; toc: an
     return { text: data.text, toc: tocData.outline || [] };
 }
 
-function generateLatex(title: string, markdown: string): string {
-    let body = markdown;
+let cachedPreamble: string | undefined = undefined;
 
-    // Clean YAML frontmatter
-    body = body.replace(/^---[\s\S]*?---\n/, '');
+const COURSE_SHORT_NAMES: Record<string, string> = {
+    '01040031': "אינפי 1מ'",
+    '01040166': "אלגברה אמ'",
+    '02340114': 'מבוא למדמ"ח מ\'',
+    '02340129': "קבוצות ואוטומטים",
+    '01140071': "פיזיקה 1מ'",
+    '01040032': "אינפי 2מ'",
+    '00440252': "מערכות ספרתיות",
+    '02340124': "תכנות מערכות",
+    '02340125': "אלגוריתמים נומריים",
+    '02340141': "קומבינטוריקה",
+    '01140052': "פיזיקה 2",
+    '02340218': "מבני נתונים 1",
+    '02340292': 'לוגיקה למדמ"ח',
+    '00940412': "הסתברות מ'",
+    '01040134': "אלגברה מודרנית ח'",
+    '01240120': "יסודות הכימיה",
+    '03250010': "מדע דת ופילוסופיה",
+};
 
-    // 1. Convert Headings
-    body = body.replace(/^# (.*$)/gm, '\\section*{$1}');
-    body = body.replace(/^## (.*$)/gm, '\\subsection*{$1}');
-    body = body.replace(/^### (.*$)/gm, '\\subsubsection*{$1}');
+const CALLOUT_TYPE_MAP: Record<string, { type: string; hebrew: string }> = {
+    theorem: { type: 'theorem', hebrew: 'משפט' },
+    definition: { type: 'definition', hebrew: 'הגדרה' },
+    lemma: { type: 'lemma', hebrew: 'למה' },
+    claim: { type: 'claim', hebrew: 'טענה' },
+    corollary: { type: 'corollary', hebrew: 'מסקנה' },
+    example: { type: 'example', hebrew: 'דוגמה' },
+    axiom: { type: 'axiom', hebrew: 'אקסיומה' },
+    exercise: { type: 'exercise', hebrew: 'תרגיל' },
+    hw: { type: 'homework', hebrew: 'שיעורי בית' },
+};
 
-    // 2. Convert Bold and Italic
-    body = body.replace(/\*\*(.*?)\*\*/g, '\\textbf{$1}');
-    body = body.replace(/(?<!\\)\*(.*?)\*/g, '\\textit{$1}'); // Ignores \*
-
-    // 3. Convert Obsidian Callouts to LaTeX environments
-    body = body.replace(/^> \[!(.*?)\](.*?)\n((?:>.*\n?)*)/gm, (match, type, calloutTitle, content) => {
-        let envName = type.toLowerCase().split('|')[0]; // Handle modifiers like [!theorem|*]
-
-        // Fallback to 'remark' if it's not a standard math environment
-        if (!['theorem', 'lemma', 'definition', 'corollary', 'remark', 'example', 'proof', 'axiom', 'claim'].includes(envName)) {
-            envName = 'remark';
+function getCourseInfoFromPath(rawPath: string): { code: string; name: string } {
+    const parts = decodeURIComponent(rawPath).split('/').filter(Boolean);
+    for (const part of parts) {
+        if (/^\d{8}$/.test(part)) {
+            const shortName = COURSE_SHORT_NAMES[part];
+            const fullName = dynamicFolderMap[part] ? dynamicFolderMap[part].replace(/^\d{8}\s*-\s*/, '') : '';
+            return {
+                code: part,
+                name: shortName || fullName || part
+            };
         }
+    }
 
-        const cleanContent = content.replace(/^> ?/gm, ''); // Remove blockquote arrows
-        const titleOpt = calloutTitle.trim() ? `[${calloutTitle.trim()}]` : '';
-        return `\\begin{${envName}}${titleOpt}\n${cleanContent}\\end{${envName}}\n`;
-    });
+    // Fallback: check if any part exists in dynamicFolderMap or DICTIONARY
+    for (let i = parts.length - 2; i >= 0; i--) {
+        const p = parts[i];
+        if (['semester-a', 'semester-b', 'hw', 'tutorials', 'notes'].includes(p)) continue;
+        if (dynamicFolderMap[p]) {
+            return { code: '', name: dynamicFolderMap[p].replace(/^\d{8}\s*-\s*/, '') };
+        }
+    }
 
-    // 4. Clean up remaining blockquotes
-    body = body.replace(/^> (.*?)$/gm, '$1');
-
-    // 5. Convert Image Links
-    body = body.replace(/!\[\[([^\]|]+).*?\]\]/g, (match, file) => {
-        return `\\begin{figure}[h]\n\\centering\n\\includegraphics[width=0.8\\textwidth]{${file}}\n\\end{figure}`;
-    });
-
-    // Wrap in standard Hebrew LaTeX preamble
-    return `\\documentclass[a4paper,12pt]{article}
-\\usepackage[utf8]{inputenc}
-\\usepackage[hebrew,english]{babel}
-\\usepackage{amsmath, amssymb, amsthm}
-\\usepackage{graphicx}
-\\usepackage{hyperref}
-\\usepackage{xcolor}
-
-% Define math environments
-\\newtheorem{theorem}{משפט}
-\\newtheorem{lemma}{למה}
-\\newtheorem{definition}{הגדרה}
-\\newtheorem{corollary}{מסקנה}
-\\newtheorem{axiom}{אקסיומה}
-\\newtheorem{claim}{טענה}
-\\newtheorem{example}{דוגמה}
-\\newtheorem{remark}{הערה}
-
-\\title{${title}}
-\\date{}
-
-\\begin{document}
-\\selectlanguage{hebrew}
-\\maketitle
-
-${body}
-
-\\end{document}`;
+    return { code: '', name: '' };
 }
 
 interface SearchIndexItem {
+    id: string;
     title: string;
+    type: string;
+    typeHebrew: string;
     path: string;
     content?: string;
-    excerpt: string;
-    priority: number;
+    courseName?: string;
+    courseCode?: string;
+    noteTitle?: string;
+    sectionTitle?: string;
+    keywords?: string;
 }
+
 function generateSearchIndex(vaultTree: VaultItem[]) {
     const index: SearchIndexItem[] = [];
+    let itemId = 0;
 
+    // 1. Index Courses
+    for (const [code, shortName] of Object.entries(COURSE_SHORT_NAMES)) {
+        const fullName = dynamicFolderMap[code] ? dynamicFolderMap[code].replace(/^\d{8}\s*-\s*/, '') : shortName;
+        index.push({
+            id: String(++itemId),
+            title: shortName,
+            type: 'course',
+            typeHebrew: 'קורס',
+            path: `/course/${code}`,
+            content: `קורס בטכניון: ${code} - ${fullName}`,
+            courseName: shortName,
+            courseCode: code,
+            keywords: `${code} ${shortName} ${fullName} קורס`
+        });
+    }
+
+    // 2. Index Notes, Headings (Topics), and Academic Callouts (Theorems, Definitions, Lemmas, Claims)
     function traverse(items: VaultItem[]) {
         for (const item of items) {
             if (item.isDirectory) {
                 if (item.children) traverse(item.children);
             }
             else {
+                if (!item.fullPath.endsWith('.json')) continue;
                 try {
                     const parsed = JSON.parse(fs.readFileSync(item.fullPath, 'utf8'));
-                    const content = parsed.html || '';
-                    index.push({ title: item.title, path: item.path, excerpt: "Note Overview", priority: 1 });
+                    const noteTitle = (parsed.title || item.title || '').trim();
+                    const courseInfo = getCourseInfoFromPath(item.path);
+
+                    const pLower = item.path.toLowerCase();
+                    const isHomework = pLower.includes('shyavry-byt') || pLower.includes('hw') || noteTitle.includes('שיעורי בית');
+                    const isTutorial = pLower.includes('tutorials') || pLower.includes('trgvl') || noteTitle.includes('תרגול');
+                    const isLecture = !isHomework && !isTutorial && (pLower.includes('lectures') || /^\d+/.test(noteTitle));
+
+                    const noteType = isHomework ? 'homework' : isTutorial ? 'tutorial' : isLecture ? 'lecture' : 'note';
+                    const noteTypeHebrew = isHomework ? 'שיעורי בית' : isTutorial ? 'תרגול' : isLecture ? 'הרצאה' : 'סיכום';
+
+                    const rawBody = (parsed.rawMarkdown || parsed.html || '').replace(/<[^>]*>?/gm, '');
+                    const cleanExcerpt = cleanMarkdown(rawBody).slice(0, 300);
+
+                    // A. Add Note Entry
                     index.push({
-                        title: item.title,
+                        id: String(++itemId),
+                        title: noteTitle,
+                        type: noteType,
+                        typeHebrew: noteTypeHebrew,
                         path: item.path,
-                        content: cleanMarkdown(content.replace(/<[^>]*>?/gm, '')),
-                        excerpt: cleanMarkdown(content.replace(/<[^>]*>?/gm, '').substring(0, 150) + "..."),
-                        priority: 2
+                        content: cleanExcerpt,
+                        courseName: courseInfo.name,
+                        courseCode: courseInfo.code,
+                        keywords: `${noteTitle} ${courseInfo.name} ${courseInfo.code} ${noteTypeHebrew}`
                     });
-                } catch (e) { }
+
+                    // B. Add Headings (Topics) & Callouts (Theorems, Definitions, Lemmas, etc.)
+                    if (Array.isArray(parsed.toc)) {
+                        for (const heading of parsed.toc) {
+                            const headingId = heading.id || '';
+                            if (heading.title && heading.title !== 'כללי') {
+                                index.push({
+                                    id: String(++itemId),
+                                    title: heading.title,
+                                    type: 'topic',
+                                    typeHebrew: 'נושא',
+                                    path: headingId ? `${item.path}#${headingId}` : item.path,
+                                    courseName: courseInfo.name,
+                                    courseCode: courseInfo.code,
+                                    noteTitle: noteTitle,
+                                    keywords: `${heading.title} ${noteTitle} ${courseInfo.name}`
+                                });
+                            }
+
+                            if (Array.isArray(heading.callouts)) {
+                                for (const callout of heading.callouts) {
+                                    const mapped = CALLOUT_TYPE_MAP[callout.type] || { type: 'topic', hebrew: 'נושא' };
+                                    const calloutTitle = (callout.title || '').trim();
+                                    const calloutContent = (callout.content || '').trim();
+                                    const calloutId = callout.id || headingId || '';
+
+                                    index.push({
+                                        id: String(++itemId),
+                                        title: calloutTitle,
+                                        type: mapped.type,
+                                        typeHebrew: mapped.hebrew,
+                                        path: calloutId ? `${item.path}#${calloutId}` : item.path,
+                                        content: calloutContent,
+                                        courseName: courseInfo.name,
+                                        courseCode: courseInfo.code,
+                                        noteTitle: noteTitle,
+                                        sectionTitle: heading.title,
+                                        keywords: `${mapped.hebrew} ${calloutTitle} ${heading.title} ${noteTitle} ${courseInfo.name} ${courseInfo.code}`
+                                    });
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error indexing item:', item.path, e);
+                }
             }
         }
     }
 
     traverse(vaultTree);
     fs.writeFileSync('./public/search-index.json', JSON.stringify(index));
+    console.log(`✅ Indexed ${index.length} search items (Theorems, Definitions, Lemmas, Topics, Notes, Courses).`);
 }
 
 async function processVaultFile(rawContent: string, filename: string, title: string, extension: string, destPath: string) {
@@ -276,11 +358,32 @@ async function processVaultFile(rawContent: string, filename: string, title: str
         markdownContent
     );
 
+    let latex = '';
+    let assets: any[] = [];
+    if (!isCodeFile) {
+        try {
+            const hasHebrew = /[\u0590-\u05FF]/.test(markdownContent);
+            const res = convert(markdownContent, {
+                title,
+                language: hasHebrew ? 'hebrew' : 'english',
+                preamble: cachedPreamble,
+                theme: 'regular'
+            });
+            latex = res.latex;
+            assets = res.assets;
+        } catch (err) {
+            console.error(`Failed to convert ${filename} to LaTeX:`, err);
+        }
+    }
+
     const compiledData: Record<string, unknown> = {
         title,
         type: isCodeFile ? "code" : "md",
         toc,
-        html: contentHtml
+        html: contentHtml,
+        latex,
+        assets,
+        rawMarkdown: markdownContent
     };
     fs.writeFileSync(path.join(destPath, filename + ".json"), JSON.stringify(compiledData));
 }
@@ -338,7 +441,8 @@ async function passTwoCompileFiles(destDir: string) {
         if (
             entry.name.startsWith('.') ||
             entry.name === 'folder-map.json' ||
-            entry.name === 'link-map.json'
+            entry.name === 'link-map.json' ||
+            entry.name === 'preamble-macros.json'
         ) continue;
         const fullPath = path.join(destDir, entry.name);
 
@@ -399,6 +503,7 @@ function extractAndSavePreambleMacros(vaultSrcDir: string) {
     // We walk the whole temp directory looking for any file named "preamble.sty".
     function findFile(dir: string, filename: string): string | null {
         for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
             const full = path.join(dir, entry.name);
             if (entry.isDirectory()) {
                 const found = findFile(full, filename);
@@ -419,38 +524,51 @@ function extractAndSavePreambleMacros(vaultSrcDir: string) {
     console.log(`📐 Parsing LaTeX macros from ${styPath} ...`);
     const { parseStyMacros } = require('@/lib/katex-macros');
     const content = fs.readFileSync(styPath, 'utf8');
+    cachedPreamble = content;
     const macros = parseStyMacros(content);
 
     const destPath = path.join(VAULT_DIRECTORY, 'preamble-macros.json');
     fs.writeFileSync(destPath, JSON.stringify(macros, null, 2));
-    console.log(`✅ Saved ${Object.keys(macros).length} macros → preamble-macros.json`);
+    fs.writeFileSync(path.join(VAULT_DIRECTORY, 'preamble.sty'), content);
+    console.log(`✅ Saved ${Object.keys(macros).length} macros → preamble-macros.json and preamble.sty`);
 }
 
 async function main() {
-    console.log('🔒 Authenticating and cloning private vault...');
+    const localVault = process.env.LOCAL_VAULT_PATH || 'C:/Users/ShakedKod/Documents/ShakedKod';
+    let vaultSrcDir = TEMP_DIR;
+    let isLocal = false;
+
     if (!GITHUB_PAT) {
-        console.error('❌ GITHUB_PAT is missing! Cannot clone private vault.');
-        process.exit(1);
+        if (fs.existsSync(localVault)) {
+            console.log(`📂 GITHUB_PAT is not set — using local vault at: ${localVault}`);
+            vaultSrcDir = localVault;
+            isLocal = true;
+        } else {
+            console.error('❌ GITHUB_PAT is missing and local vault not found at:', localVault);
+            process.exit(1);
+        }
+    } else {
+        console.log('🔒 Authenticating and cloning private vault...');
+        if (fs.existsSync(TEMP_DIR)) fs.rmSync(TEMP_DIR, { recursive: true, force: true });
+        execSync(`git clone https://${GITHUB_PAT}@${VAULT_REPO} ${TEMP_DIR}`, { stdio: 'inherit' });
     }
 
-    if (fs.existsSync(TEMP_DIR)) fs.rmSync(TEMP_DIR, { recursive: true, force: true });
     if (fs.existsSync(VAULT_DIRECTORY)) fs.rmSync(VAULT_DIRECTORY, { recursive: true, force: true });
     if (fs.existsSync(PUBLIC_IMAGES_DIR)) fs.rmSync(PUBLIC_IMAGES_DIR, { recursive: true, force: true });
 
     fs.mkdirSync(PUBLIC_IMAGES_DIR, { recursive: true });
-    execSync(`git clone https://${GITHUB_PAT}@${VAULT_REPO} ${TEMP_DIR}`, { stdio: 'inherit' });
 
     console.log('🔄 Syncing Images...');
-    syncImages(TEMP_DIR);
+    syncImages(vaultSrcDir);
 
-    const SPECIFIC_FOLDER = path.join(TEMP_DIR, "01 - University", "02 - Technion", "תואר ראשון במדעי המחשב");
+    const SPECIFIC_FOLDER = path.join(vaultSrcDir, "01 - University", "02 - Technion", "תואר ראשון במדעי המחשב");
 
     if (fs.existsSync(SPECIFIC_FOLDER)) {
         console.log('🏗️ PASS 1: Building directory structure and copying raw files...');
         passOneBuildStructure(SPECIFIC_FOLDER, VAULT_DIRECTORY);
 
         // Extract and save preamble macros if available
-        extractAndSavePreambleMacros(TEMP_DIR);
+        extractAndSavePreambleMacros(vaultSrcDir);
 
         // Save maps for the processor and sidebar!
         fs.writeFileSync(path.join(VAULT_DIRECTORY, 'folder-map.json'), JSON.stringify(autoFolderMap, null, 2));
@@ -459,10 +577,12 @@ async function main() {
         console.log('⚙️ PASS 2: Compiling Markdown to JSON blobs...');
         await passTwoCompileFiles(VAULT_DIRECTORY);
     } else {
-        console.error('❌ Could not find the specific target folder in the repository.');
+        console.error('❌ Could not find the specific target folder in the repository:', SPECIFIC_FOLDER);
     }
 
-    fs.rmSync(TEMP_DIR, { recursive: true, force: true });
+    if (!isLocal && fs.existsSync(TEMP_DIR)) {
+        fs.rmSync(TEMP_DIR, { recursive: true, force: true });
+    }
 
     console.log('🔍 Generating search index...');
     const vaultTree = getVaultTree(VAULT_DIRECTORY);

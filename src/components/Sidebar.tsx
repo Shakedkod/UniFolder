@@ -10,6 +10,8 @@ import BackButton from "./NoteComponents/BackButton";
 import RenderMD from "./MarkdownRendererForInline";
 import ThemeMenu from "./ThemeMenu";
 import PrintTitlePage from "./Note/pdf/TitlePageForPDF";
+import PdfDownloader from "./Note/pdf/PdfDownloader";
+import LatexDownloadButton from "./LatexDownloadButton";
 
 interface NavigatorContent {
     title: string;
@@ -24,6 +26,8 @@ interface NavigatorContent {
         name: string;
     };
     type: string;
+    latex?: string; // Optional LaTeX content for the note
+    assets?: { path: string; kind: string; isUrl: boolean }[];
 }
 
 const levelStyles: Record<number, string> = {
@@ -324,6 +328,20 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
             </FadingScrollContainer>
 
             <div className="w-full shrink-0 pt-6 mt-2 border-t border-accent2-border">
+                {content.latex && (
+                    <LatexDownloadButton
+                        latex={content.latex}
+                        title={content.title}
+                        assets={content.assets}
+                    />
+                )}
+                <PdfDownloader
+                    title={content.title}
+                    courseId={content.course.id || undefined}
+                    courseName={content.course.name || undefined}
+                    latex={content.latex}
+                    assets={content.assets}
+                />
                 <ThemeMenu />
             </div>
         </aside>
@@ -378,6 +396,20 @@ export default function Sidebar({ content }: { content: NavigatorContent }) {
                     </FadingScrollContainer>
 
                     <div className="w-full shrink-0 pt-4 mt-2 border-t border-foreground/10">
+                        {content.latex && (
+                            <LatexDownloadButton
+                                latex={content.latex}
+                                title={content.title}
+                                assets={content.assets}
+                            />
+                        )}
+                        <PdfDownloader
+                            title={content.title}
+                            courseId={content.course.id || undefined}
+                            courseName={content.course.name || undefined}
+                            latex={content.latex}
+                            assets={content.assets}
+                        />
                         <ThemeMenu />
                     </div>
                 </div>

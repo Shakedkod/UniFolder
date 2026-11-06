@@ -1,0 +1,85 @@
+# Example: convert an Obsidian vault to LaTeX and deploy the result.
+#
+# Copy to `.github/workflows/` in the repository that holds the site. The vault
+# is a second repository checked out beside it, so notes stay private while the
+# generated `.tex`/`.pdf` files are what gets published.
+#
+# Why the conversion happens here rather than on the host: it needs
+# `rsvg-convert` for figures and `xelatex` for PDFs, which are ordinary apt
+# packages on a CI runner and awkward or impossible on a serverless host. The
+# deployed site only serves static files.
+name: Build vault
+
+on:
+  push:
+    branches: [main]
+  # Rebuild when the vault changes, not just the site. Have the vault
+  # repository send a `repository_dispatch` with this type on push.
+  repository_dispatch:
+    types: [vault-updated]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out the vault
+        uses: actions/checkout@v4
+        with:
+          repository: your-name/your-vault
+          # A fine-grained PAT with read access to the vault repository.
+          token: ${{ secrets.VAULT_TOKEN }}
+          path: vault
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # rsvg-convert renders SVG figures to PDF. Without it every SVG figure is
+      # missing from the output, and nothing fails loudly to tell you.
+      - name: Install the figure converter
+        run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
+
+      # Only needed for `--pdf`. This is a large download; drop this step and the
+      # `--pdf` flag if the site only offers `.tex` and `.zip` downloads.
+      - name: Install TeX
+        run: |
+          sudo apt-get install -y \
+            texlive-xetex texlive-latex-extra texlive-fonts-recommended \
+            texlive-lang-other texlive-science texlive-pictures
+          # Hebrew notes need a font that covers the script.
+          sudo apt-get install -y fonts-culmus
+
+      - run: npm ci
+      - run: npm run build:core
+
+      # Caching the outputs makes later builds skip notes that have not changed,
+      # which matters once a vault is large enough for the PDF step to dominate.
+      - name: Cache converted notes
+        uses: actions/cache@v4
+        with:
+          path: apps/nextjs-example/public/latex
+          key: vault-${{ hashFiles('vault/**/*.md') }}
+          restore-keys: vault-
+
+      - name: Convert the vault
+        working-directory: apps/nextjs-example
+        run: |
+          npm run build:vault -- \
+            --vault ../../vault \
+            --pdf \
+            --author "Your Name" \
+            --base-url https://notes.example.com \
+            --preamble ../../macros.tex
+
+      - name: Build the site
+        working-directory: apps/nextjs-example
+        run: npm run build
+
+      # Deploy however you already do — this pushes the built site to Vercel.
+      - name: Deploy
+        run: npx vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/nextjs-example

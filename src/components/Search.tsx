@@ -1,192 +1,235 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import MiniSearch from 'minisearch';
 import RenderMD from './MarkdownRendererForInline';
-import { Folder, GraduationCap, Group, Pencil, FileText } from 'lucide-react';
+import {
+    Folder,
+    GraduationCap,
+    BookOpen,
+    Bookmark,
+    Lightbulb,
+    Hash,
+    Layers,
+    FileText,
+    Pencil,
+    X,
+    Search as SearchIcon,
+    Loader2,
+    ArrowLeft,
+    Sparkles,
+} from 'lucide-react';
 
-const getResultIcon = (res: any) => {
-    if (res.isLecture) {
-        return (<GraduationCap className="w-4 h-4 text-highlight" />);
-    }
-    if (res.isTutorial) {
-        // Users/Group for Tutorials
-        return (<Group className="w-4 h-4 text-highlight" />);
-    }
-    if (res.isHomework) {
-        // Pencil for Homework
-        return (<Pencil className="w-4 h-4 text-green-400" />);
-    }
-    return (<FileText className="w-4 h-4 text-gray-400" />);
+export type SearchCategory =
+    | 'all'
+    | 'theorems'
+    | 'definitions'
+    | 'lemmas'
+    | 'topics'
+    | 'courses'
+    | 'lectures'
+    | 'tutorials';
+
+interface SearchItem {
+    id: string;
+    title: string;
+    type: string;
+    typeHebrew: string;
+    path: string;
+    content?: string;
+    courseName?: string;
+    courseCode?: string;
+    noteTitle?: string;
+    sectionTitle?: string;
+    keywords?: string;
+}
+
+const CATEGORY_TABS: { id: SearchCategory; label: string; icon?: any }[] = [
+    { id: 'all', label: 'הכל' },
+    { id: 'theorems', label: 'משפטים' },
+    { id: 'definitions', label: 'הגדרות' },
+    { id: 'lemmas', label: 'למות וטענות' },
+    { id: 'topics', label: 'נושאים' },
+    { id: 'courses', label: 'קורסים' },
+    { id: 'lectures', label: 'הרצאות' },
+    { id: 'tutorials', label: 'תרגולים' },
+];
+
+const POPULAR_SUGGESTIONS = [
+    { label: 'משפט בולצאנו-ויירשטראס', query: 'בולצאנו ויירשטראס' },
+    { label: 'הגדרת גבול', query: 'הגדרת גבול' },
+    { label: 'משפט קנטור', query: 'קנטור' },
+    { label: 'אינפי 1מ\'', query: 'אינפי 1' },
+    { label: 'מבני נתונים 1', query: 'מבני נתונים' },
+    { label: 'גרם שמידט', query: 'גרם שמידט' },
+    { label: 'למת החילוץ', query: 'למת החילוץ' },
+];
+
+// Normalize Hebrew for MiniSearch
+const normalizeHebrew = (term: string) => {
+    return term
+        .toLowerCase()
+        .replace(/[\u0591-\u05C7]/g, '') // strip nikud
+        .replace(/["'״׳]/g, '') // normalize quotes (מדמ"ח == מדמח, 1מ' == 1מ)
+        .replace(/[-_]/g, ' ')
+        .trim();
 };
 
 export default function Search() {
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<any[]>([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [totalResults, setTotalResults] = useState(0);
+    const [activeCategory, setActiveCategory] = useState<SearchCategory>('all');
+    const [results, setResults] = useState<SearchItem[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isIndexReady, setIsIndexReady] = useState(false);
+
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
+    const miniSearchRef = useRef<MiniSearch<SearchItem> | null>(null);
+    const itemsMapRef = useRef<Map<string, SearchItem>>(new Map());
 
-    // Toggle with Ctrl+K and close with Escape
+    // 1. Initialize or load the search index
+    const loadIndex = async () => {
+        if (miniSearchRef.current) return;
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/search-data');
+            const data: SearchItem[] = await res.json();
+
+            const ms = new MiniSearch<SearchItem>({
+                fields: ['title', 'content', 'courseName', 'courseCode', 'noteTitle', 'sectionTitle', 'typeHebrew', 'keywords'],
+                storeFields: ['id', 'title', 'type', 'typeHebrew', 'path', 'content', 'courseName', 'courseCode', 'noteTitle', 'sectionTitle'],
+                searchOptions: {
+                    prefix: true,
+                    fuzzy: (term) => (term.length > 3 ? 0.2 : false),
+                    boost: {
+                        title: 7,
+                        typeHebrew: 5,
+                        courseName: 4,
+                        sectionTitle: 3,
+                        keywords: 2,
+                        content: 1,
+                    },
+                },
+                processTerm: normalizeHebrew,
+            });
+
+            const map = new Map<string, SearchItem>();
+            for (const item of data) {
+                map.set(item.id, item);
+            }
+            itemsMapRef.current = map;
+
+            ms.addAll(data);
+            miniSearchRef.current = ms;
+            setIsIndexReady(true);
+        } catch (err) {
+            console.error('Failed to initialize search engine:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // 2. Open / close handlers
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Detect Ctrl+K or Cmd+K (for Mac users)
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault(); // STOP the browser's default "search" behavior
+                e.preventDefault();
                 setIsOpen((prev) => !prev);
             }
-
-            // Bonus: Escape to close
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && isOpen) {
                 setIsOpen(false);
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [isOpen]);
 
-    // Focus input when modal opens
+    // Preload index when modal opens and auto-focus
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
+            loadIndex();
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 60);
         } else {
             document.body.style.overflow = 'unset';
+            setSelectedIndex(0);
         }
     }, [isOpen]);
 
-    const handleSearch = async (val: string) => {
-        setQuery(val);
-        setResults([]);
-        setTotalResults(0);
-        const query = val.toLowerCase().trim();
+    // 3. Perform search whenever query or category changes
+    useEffect(() => {
+        if (!miniSearchRef.current) return;
 
-        if (query.length < 2) return;
-
-        try {
-            // 1. Fetch from the enriched API route instead of the static file
-            const res = await fetch('/api/search-data');
-            const data = await res.json();
-
-            const scoredResults = data.map((item: any) => {
-                let score = 0;
-                const title = item.title.toLowerCase();
-                const queryLower = query.toLowerCase();
-                const rawContent = item.content || item.excerpt || "";
-                const bodyContent = rawContent.toLowerCase();
-
-                // 1. TITLE SCORING
-                let titleScore = 0;
-                if (title === queryLower) {
-                    titleScore = 100000;
-                } else if (title.includes(queryLower)) {
-                    titleScore = 50000;
-
-                    // DEPTH PENALTY:
-                    // If the title contains '>', it's a section. 
-                    // We subtract a small amount so "File" > "File > Section"
-                    const depth = (title.match(/>/g) || []).length;
-                    titleScore -= (depth * 1000);
-                }
-
-                // 2. CONTENT SCORING (Crucial for showing results where query is not in the filename)
-                // We give a base score if the content matches, ensuring it passes the filter
-                let contentScore = 0;
-                if (bodyContent.includes(queryLower)) {
-                    contentScore += 40; // Base score for content match
-
-                    // Bonus score based on how many times it appears
-                    const occurrences = (bodyContent.match(new RegExp(queryLower, 'g')) || []).length;
-                    contentScore += Math.min(occurrences * 2, 20);
-
-                    // Snippet generation logic remains the same
-                    const matchIndex = bodyContent.indexOf(queryLower);
-                    const start = Math.max(0, matchIndex - 40);
-                    const end = Math.min(rawContent.length, matchIndex + queryLower.length + 40);
-
-                    let snippet = rawContent.substring(start, end);
-                    const dollarCount = (snippet.match(/\$/g) || []).length;
-
-                    if (dollarCount % 2 !== 0) {
-                        // Find the remaining part of the math block in the original content
-                        const remainingContent = rawContent.substring(end);
-                        const nextClosingDollar = remainingContent.indexOf('$');
-
-                        if (nextClosingDollar !== -1) {
-                            // Extend the snippet just enough to close the math block
-                            snippet += remainingContent.substring(0, nextClosingDollar + 1);
-                        } else {
-                            // If no closing dollar is found, strip the opening dollar to avoid broken render
-                            snippet = snippet.replace(/\$(?=[^$]*$)/, '');
-                        }
-                    }
-
-                    item.displayExcerpt = (start > 0 ? "..." : "") + snippet.replace(/\n/g, ' ') + "...";
-                }
-                else {
-                    item.displayExcerpt = (item.excerpt || "").slice(0, 100);
-                }
-
-                let categoryMultiplier = item.isLecture ? 10 : item.isTutorial ? 5 : 1;
-                let finalContentScore = contentScore * categoryMultiplier;
-                score = titleScore + finalContentScore;
-
-                // 3. CATEGORY DETECTION (Using the API-provided flags)
-                const path = (item.path || "").toLowerCase();
-                const isHomework = item.isHomework || path.includes('שיעורי בית');
-                const isTutorial = item.isTutorial || path.includes('תרגול') || path.includes("tutorials");
-                const isLecture = item.isLecture || (/^\d+/.test(item.title) && !isHomework && !isTutorial);
-
-                return { ...item, score, isLecture, isTutorial, isHomework, isTitleMatch: titleScore > 0 };
-            }).filter((item: any) => item.score > 0) // Now content matches have a score of 20+
-                .sort((a: any, b: any) => {
-                    // 1. Group by Category
-                    const getWeight = (item: any) => item.isLecture ? 1 : item.isTutorial ? 2 : 3;
-                    const weightA = getWeight(a);
-                    const weightB = getWeight(b);
-                    if (weightA !== weightB) return weightA - weightB;
-
-                    // 2. Within that category, put Title Matches first
-                    if (a.isTitleMatch !== b.isTitleMatch) {
-                        return a.isTitleMatch ? -1 : 1;
-                    }
-
-                    // 3. Within those groups, sort by raw score
-                    return b.score - a.score;
-                });
-
-            setTotalResults(scoredResults.length);
-            setResults(scoredResults);
+        const trimmed = query.trim();
+        if (!trimmed) {
+            setResults([]);
             setSelectedIndex(0);
-        } catch (err) {
-            console.error("Failed to fetch search data:", err);
+            return;
         }
-    };
 
+        // Try exact AND search first so multi-word queries match accurately
+        let rawResults = miniSearchRef.current.search(trimmed, { combineWith: 'AND' });
+        if (rawResults.length === 0) {
+            rawResults = miniSearchRef.current.search(trimmed, { combineWith: 'OR' });
+        }
+
+        const map = itemsMapRef.current;
+
+        const fullItems: SearchItem[] = [];
+        for (const r of rawResults) {
+            const item = map.get(r.id);
+            if (!item) continue;
+
+            // Category filtering
+            if (activeCategory === 'theorems' && item.type !== 'theorem') continue;
+            if (activeCategory === 'definitions' && item.type !== 'definition') continue;
+            if (activeCategory === 'lemmas' && !['lemma', 'claim', 'corollary', 'axiom'].includes(item.type)) continue;
+            if (activeCategory === 'topics' && item.type !== 'topic') continue;
+            if (activeCategory === 'courses' && item.type !== 'course') continue;
+            if (activeCategory === 'lectures' && item.type !== 'lecture') continue;
+            if (activeCategory === 'tutorials' && !['tutorial', 'homework'].includes(item.type)) continue;
+
+            fullItems.push(item);
+            if (fullItems.length >= 80) break; // Limit for optimal UI performance
+        }
+
+        setResults(fullItems);
+        setSelectedIndex(0);
+    }, [query, activeCategory, isIndexReady]);
+
+    // 4. Keyboard navigation (Arrow Up, Arrow Down, Enter)
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (results.length === 0) return;
 
         if (e.key === 'ArrowDown') {
-            e.preventDefault(); // Stop the cursor from jumping to the end of the text
+            e.preventDefault();
             setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
         } else if (e.key === 'ArrowUp') {
-            e.preventDefault(); // Stop the cursor from jumping to the start
+            e.preventDefault();
             setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
         } else if (e.key === 'Enter') {
             e.preventDefault();
             if (selectedIndex >= 0 && selectedIndex < results.length) {
-                router.push(results[selectedIndex].path);
-                setIsOpen(false);
+                navigateToResult(results[selectedIndex]);
             }
         }
     };
 
-    // Auto-scroll the list when navigating with arrows
+    const navigateToResult = (item: SearchItem) => {
+        router.push(item.path);
+        setIsOpen(false);
+    };
+
+    // Auto-scroll list when navigating with arrows
     useEffect(() => {
         if (isOpen) {
-            const el = document.getElementById(`search-result-${selectedIndex}`);
+            const el = document.getElementById(`search-res-${selectedIndex}`);
             if (el) {
                 el.scrollIntoView({ block: 'nearest' });
             }
@@ -195,114 +238,274 @@ export default function Search() {
 
     if (!isOpen) return null;
 
+    // Helper for rendering badges
+    const renderTypeBadge = (type: string, hebrew: string) => {
+        switch (type) {
+            case 'theorem':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                        <GraduationCap size={12} />
+                        <span>משפט</span>
+                    </span>
+                );
+            case 'definition':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/30">
+                        <BookOpen size={12} />
+                        <span>הגדרה</span>
+                    </span>
+                );
+            case 'lemma':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                        <Bookmark size={12} />
+                        <span>למה</span>
+                    </span>
+                );
+            case 'claim':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                        <Lightbulb size={12} />
+                        <span>טענה</span>
+                    </span>
+                );
+            case 'corollary':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-500/15 text-teal-400 border border-teal-500/30">
+                        <Bookmark size={12} />
+                        <span>מסקנה</span>
+                    </span>
+                );
+            case 'topic':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                        <Hash size={12} />
+                        <span>נושא</span>
+                    </span>
+                );
+            case 'course':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-600/15 text-blue-400 border border-blue-600/30">
+                        <Layers size={12} />
+                        <span>קורס</span>
+                    </span>
+                );
+            case 'homework':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-green-500/15 text-green-400 border border-green-500/30">
+                        <Pencil size={12} />
+                        <span>שיעורי בית</span>
+                    </span>
+                );
+            case 'tutorial':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+                        <GraduationCap size={12} />
+                        <span>תרגול</span>
+                    </span>
+                );
+            default:
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-500/15 text-slate-400 border border-slate-500/30">
+                        <FileText size={12} />
+                        <span>{hebrew || 'סיכום'}</span>
+                    </span>
+                );
+        }
+    };
+
     return (
-        // The overlay backdrop: clicking it closes the modal
         <div
-            className="fixed inset-0 bg-background/60 backdrop-blur-sm z-100 flex items-start justify-center pt-[15vh]"
+            className="fixed inset-0 bg-background/70 backdrop-blur-md z-100 flex items-start justify-center pt-8 sm:pt-[10vh] px-3 sm:px-4 animate-in fade-in duration-150"
             onClick={() => setIsOpen(false)}
         >
-            {/* The modal container: stopPropagation prevents clicks inside from closing it */}
             <div
-                className="bg-button-bg border border-button-border-light/60 w-full max-w-2xl print:max-w-none rounded-xl shadow-2xl overflow-hidden flex flex-col"
+                className="bg-button-bg border border-button-border w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] transition-all"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Search Input Header */}
-                <div className="flex items-center px-4 border-b border-button-border/60" dir="rtl">
-                    <svg className="w-5 h-5 text-gray-400 ml-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+                {/* Search Input Bar */}
+                <div className="flex items-center px-4 py-3.5 border-b border-button-border-light relative gap-3" dir="rtl">
+                    <SearchIcon className="w-5 h-5 text-gray-400 shrink-0" />
+
                     <input
                         ref={inputRef}
-                        className="w-full bg-transparent text-foreground placeholder-gray-500 py-4 outline-none text-lg"
-                        placeholder="חפשו!"
+                        type="text"
+                        className="w-full bg-transparent text-foreground placeholder-gray-500 outline-none text-base sm:text-lg font-medium pr-1"
+                        placeholder="חיפוש משפטים, הגדרות, למות, נושאים וקורסים..."
                         value={query}
-                        onChange={(e) => handleSearch(e.target.value)}
+                        onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleInputKeyDown}
                     />
 
-                    {/* The Counter */}
-                    {query.length >= 2 && (
-                        <span className="text-sm text-gray-500 whitespace-nowrap ml-3">
-                            {`${totalResults} תוצאות`}
+                    {/* Loading spinner */}
+                    {isLoading && (
+                        <Loader2 className="w-4 h-4 text-highlight animate-spin shrink-0" />
+                    )}
+
+                    {/* Clear Button */}
+                    {query.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setQuery('');
+                                inputRef.current?.focus();
+                            }}
+                            className="p-1 rounded-full text-gray-400 hover:text-foreground hover:bg-white/10 transition-colors"
+                            aria-label="נקה חיפוש"
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
+
+                    {/* Result Count Badge */}
+                    {query.trim().length > 0 && (
+                        <span className="text-xs font-medium text-gray-400 bg-background/50 px-2 py-1 rounded-md border border-button-border-light whitespace-nowrap">
+                            {results.length} תוצאות
                         </span>
                     )}
 
-                    <kbd className="hidden sm:inline-block bg-button-border text-foreground text-xs px-2 py-1 rounded border border-button-border-light font-mono">
+                    <kbd className="hidden sm:inline-flex items-center gap-1 bg-button-border text-foreground text-[10px] font-mono px-2 py-1 rounded border border-button-border-light">
                         ESC
                     </kbd>
                 </div>
 
-                {/* Results List */}
-                <div className="max-h-[60vh] overflow-y-auto p-2 space-y-1" dir="rtl">
-                    {results.length === 0 && query.length >= 2 && (
-                        <div className="p-8 text-center text-gray-500">
-                            לא נמצאו תוצאות עבור "{query}"
+                {/* Category Filter Tabs */}
+                <div className="flex items-center gap-1.5 px-3 py-2 border-b border-button-border-light bg-accent-background/30 overflow-x-auto no-scrollbar" dir="rtl">
+                    {CATEGORY_TABS.map((tab) => {
+                        const isActive = activeCategory === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setActiveCategory(tab.id)}
+                                className={`text-xs px-3 py-1.5 rounded-lg whitespace-nowrap font-medium transition-all ${isActive
+                                    ? 'bg-hero-primary-main/20 text-hero-primary-main border border-hero-primary-main/40 font-semibold'
+                                    : 'text-gray-400 hover:text-foreground hover:bg-white/5 border border-transparent'
+                                    }`}
+                            >
+                                {tab.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Results Container */}
+                <div className="flex-1 overflow-y-auto p-2 space-y-1 divide-y divide-button-border-light/30" dir="rtl">
+                    {/* Empty Query State: Show Suggestions */}
+                    {!query.trim() && (
+                        <div className="p-6 flex flex-col gap-6 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="p-3 rounded-full bg-highlight/10 text-highlight mb-1">
+                                    <Sparkles size={24} />
+                                </div>
+                                <h3 className="text-base font-bold text-foreground">חיפוש חכם בכל תיקיית הסיכומים</h3>
+                                <p className="text-xs text-really-light-text max-w-md">
+                                    ניתן לחפש שמות משפטים, הגדרות מתמטיות, למות, טענות, ראשי פרקים, מספרי קורסים ומילות מפתח.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col gap-2 pt-2 text-right">
+                                <span className="text-xs font-semibold text-gray-400">נושאים ומשפטים מבוקשים:</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {POPULAR_SUGGESTIONS.map((item) => (
+                                        <button
+                                            key={item.label}
+                                            type="button"
+                                            onClick={() => {
+                                                setQuery(item.query);
+                                                inputRef.current?.focus();
+                                            }}
+                                            className="text-xs px-3 py-1.5 rounded-lg bg-background hover:bg-hero-primary-main/15 border border-button-border-light hover:border-hero-primary-main text-foreground/90 transition-all shadow-2xs"
+                                        >
+                                            {item.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     )}
 
-                    {results.map((res, index) => {
-                        // Pass the index ^^^
+                    {/* No Results Found */}
+                    {query.trim().length > 0 && results.length === 0 && (
+                        <div className="py-12 px-6 text-center text-gray-400 flex flex-col items-center gap-2">
+                            <span className="text-lg">לא נמצאו תוצאות עבור "{query}"</span>
+                            <span className="text-xs text-gray-500">נסו לחפש חלק מהמילה, מונח אחר או לבחור בקטגוריה "הכל".</span>
+                        </div>
+                    )}
 
-                        const imageRegex = /!\[([^\]]*)\]/g;
-                        const calloutRegex = />\s*\[!\w+\]\s*(.*)/g;
-                        const iconRegex = /:[a-zA-Z0-9_-]+:/g;
-                        const viewTitle = res.title
-                            .replace(imageRegex, '')
-                            .replace(calloutRegex, '$1')
-                            .replace(iconRegex, '')
-                            .trim() || res.title;
-                        const viewDisplayExcerpt = res.displayExcerpt
-                            .replace(imageRegex, '')
-                            .replace(calloutRegex, '$1')
-                            .replace(iconRegex, '')
-                            .trim() || res.displayExcerpt;
-
+                    {/* Results List */}
+                    {results.map((item, index) => {
                         const isActive = index === selectedIndex;
+                        const isCourse = item.type === 'course';
 
                         return (
-                            <div className="flex flex-col gap-1">
-                                {/* Optional: Render a Category Header if it's the first item of its type */}
-                                {(index === 0 ||
-                                    (res.isLecture !== results[index - 1]?.isLecture) ||
-                                    (res.isTutorial !== results[index - 1]?.isTutorial)) && (
-                                        <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 pt-4 pb-1" dir="rtl">
-                                            {res.isLecture ? "הרצאות" : res.isTutorial ? "תרגולים" : "מטלות וחומר נוסף"}
+                            <div
+                                id={`search-res-${index}`}
+                                key={item.id}
+                                onClick={() => navigateToResult(item)}
+                                onMouseEnter={() => setSelectedIndex(index)}
+                                className={`p-3 rounded-xl cursor-pointer transition-all flex flex-col gap-1.5 border-r-4 ${isActive
+                                    ? 'bg-white/5 border-highlight shadow-xs'
+                                    : 'hover:bg-white/3 border-transparent'
+                                    }`}
+                            >
+                                {/* Header: Badge, Title, Breadcrumb */}
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        {renderTypeBadge(item.type, item.typeHebrew)}
+
+                                        <div className="text-foreground font-semibold text-sm sm:text-base truncate">
+                                            <RenderMD content={item.title.replace(/\$\$/g, '$')} />
                                         </div>
-                                    )}
-
-                                <div
-                                    id={`search-result-${index}`}
-                                    key={`search-result-${res.path}-with-${res.displayExcerpt}`}
-                                    onClick={() => { router.push(res.path); setIsOpen(false); }}
-                                    onMouseEnter={() => setSelectedIndex(index)}
-                                    className={`p-3 rounded-lg cursor-pointer transition-colors group flex flex-col gap-1 border-r-4 ${isActive
-                                        ? 'bg-background/10 border-highlight-icon'
-                                        : 'hover:bg-white/5 border-transparent'
-                                        }`}
-                                >
-                                    <div className="text-foreground-heading-2 font-medium flex items-center gap-2">
-                                        {/* Dynamic Icon */}
-                                        <div className={isActive ? 'opacity-100' : 'opacity-40 group-hover:opacity-100'}>
-                                            {getResultIcon(res)}
-                                        </div>
-
-                                        <RenderMD content={viewTitle.replace(/\$\$/g, '$')} />
-
-                                        {/* THE FOLDER IDENTIFIER */}
-                                        <span className="text-[10px] text-gray-500 font-normal flex items-center gap-1 opacity-70">
-                                            <Folder size={10} />
-                                            {/* Decodes URL-encoded Hebrew folder names */}
-                                            {res.courseName}
-                                        </span>
                                     </div>
 
-                                    <div className="text-gray-400 text-sm leading-relaxed pr-6 line-clamp-2">
-                                        <RenderMD content={viewDisplayExcerpt.replace(/\$\$/g, '$')} />
+                                    {/* Course & Note Context */}
+                                    <div className="flex items-center gap-1.5 text-xs text-gray-400 shrink-0 font-normal">
+                                        {item.courseName && (
+                                            <span className="flex items-center gap-1 text-[11px] bg-background/80 px-2 py-0.5 rounded border border-button-border-light">
+                                                <Folder size={11} className="text-highlight" />
+                                                <span className="truncate max-w-[130px]">{item.courseName}</span>
+                                            </span>
+                                        )}
+                                        <ArrowLeft size={12} className="text-gray-500" />
                                     </div>
                                 </div>
+
+                                {/* Breadcrumb Subtitle for Callouts / Topics */}
+                                {(item.noteTitle || item.sectionTitle) && !isCourse && (
+                                    <div className="text-[11px] text-gray-400 flex items-center gap-1.5 pr-1">
+                                        {item.noteTitle && <span>{item.noteTitle}</span>}
+                                        {item.noteTitle && item.sectionTitle && <span>›</span>}
+                                        {item.sectionTitle && <span className="text-gray-300 font-medium">{item.sectionTitle}</span>}
+                                    </div>
+                                )}
+
+                                {/* Excerpt / Content Statement */}
+                                {item.content && (
+                                    <div className="text-xs text-gray-400 line-clamp-2 leading-relaxed pr-1 font-normal opacity-90">
+                                        <RenderMD content={item.content.replace(/\$\$/g, '$')} />
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
+                </div>
+
+                {/* Footer Bar */}
+                <div className="px-4 py-2 border-t border-button-border-light bg-accent-background/40 flex items-center justify-between text-[11px] text-gray-400" dir="rtl">
+                    <div className="flex items-center gap-4">
+                        <span className="inline-flex items-center gap-1">
+                            <kbd className="px-1.5 py-0.5 rounded bg-background border border-button-border-light text-[10px] font-mono">↑</kbd>
+                            <kbd className="px-1.5 py-0.5 rounded bg-background border border-button-border-light text-[10px] font-mono">↓</kbd>
+                            ניווט
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                            <kbd className="px-1.5 py-0.5 rounded bg-background border border-button-border-light text-[10px] font-mono">Enter</kbd>
+                            פתיחה
+                        </span>
+                    </div>
+
+                    <span>חיפוש מהיר בכספת הלימודים</span>
                 </div>
             </div>
         </div>
