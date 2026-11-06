@@ -3,6 +3,7 @@ import ItemLink from "../NoteComponents/ItemLink";
 import BackButton from "../NoteComponents/BackButton";
 import { Folder } from "lucide-react";
 import SetPageTitle from "../SetPageTitle";
+import CourseExportButton from "./CourseExportButton";
 
 export default async function FolderPage({ currentSlug, parentUrl, parentName }: { currentSlug: string[]; parentUrl: string; parentName: string }) {
     const items = getFolderContents(currentSlug);
@@ -44,10 +45,19 @@ export default async function FolderPage({ currentSlug, parentUrl, parentName }:
                 <BackButton url={parentUrl} name={parentName} bg="light" />
 
                 {/* Main Header */}
-                <h1 className="text-4xl font-bold mb-10 text-foreground-title flex items-center gap-3">
+                <h1 className="text-4xl font-bold mb-6 text-foreground-title flex items-center gap-3">
                     <Folder size={36} />
                     {folderName}
                 </h1>
+
+                {/* Course Lectures Export Button (ZIP / LaTeX / PDF) */}
+                {numberedFiles.length > 0 && (
+                    <CourseExportButton
+                        slug={currentSlug}
+                        folderTitle={folderName}
+                        lectureCount={numberedFiles.length}
+                    />
+                )}
 
                 {/* --- Render the Sections Dynamically --- */}
                 {folders.length > 0 && (
