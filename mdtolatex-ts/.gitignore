@@ -1,7 +1,0 @@
-node_modules/
-dist/
-.next/
-next-env.d.ts
-*.tsbuildinfo
-packages/obsidian-plugin/main.js
-packages/obsidian-plugin/*.js.map

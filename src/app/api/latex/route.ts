@@ -5,7 +5,7 @@ import {
   missingBox,
   skippedLabel,
   type AssetReference,
-} from '@mdtolatex/core';
+} from '@/lib/mdtolatex';
 
 export const runtime = 'nodejs';
 

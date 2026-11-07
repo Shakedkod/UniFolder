@@ -1,13 +1,13 @@
 import path from 'path';
 import fs from 'fs';
 import sharp from 'sharp';
-import { compileToPdf } from '@mdtolatex/node';
 import {
+  compileToPdf,
   substituteAsset,
   placeholderForAsset,
   skippedLabel,
   type AssetReference,
-} from '@mdtolatex/core';
+} from '@/lib/mdtolatex';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;

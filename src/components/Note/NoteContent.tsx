@@ -60,20 +60,13 @@ export default async function NoteContent({ currentSlug, parentUrl, parentName, 
         const pdfStaticUrl = path.join(LIVE_VAULT_URL, ...currentSlug.slice(0, -1), rawFilename + ".pdf").replace(/\\/g, '/');
         return (
             <main className="w-full h-screen">
-                {/* Callout to make the user click the download button if they want to print, since printing from the PDF viewer can be buggy */}
-                <div className="hidden print:block fixed top-0 left-0 right-0 bg-yellow-50 border-b border-yellow-400 text-yellow-800 p-4 z-50 print-warning" dir="rtl">
-                    <p className="text-xl">הקובץ הזה הוא PDF - מומלץ להוריד אותו ע"י לחיצה על כפתור ההורדה בסרגל הכלים העליון כדי שהפורמט ישמר כראוי בעת ההדפסה.</p>
-                </div>
-
-                <div className="print:hidden">
-                    <PdfViewerWrap
-                        pdfUrl={pdfStaticUrl}
-                        fileName={rawFilename}
-                        parentUrl={parentUrl}
-                        parentName={parentName}
-                        title={title}
-                    />
-                </div>
+                <PdfViewerWrap
+                    pdfUrl={pdfStaticUrl}
+                    fileName={rawFilename}
+                    parentUrl={parentUrl}
+                    parentName={parentName}
+                    title={title}
+                />
             </main>
         );
     }

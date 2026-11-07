@@ -1,16 +1,16 @@
 import path from 'path';
 import fs from 'fs';
 import sharp from 'sharp';
-import { compileToPdf } from '@mdtolatex/node';
 import {
   convert,
+  compileToPdf,
   buildBundle,
   substituteAsset,
   placeholderForAsset,
   skippedLabel,
   missingBox,
   type AssetReference,
-} from '@mdtolatex/core';
+} from '@/lib/mdtolatex';
 import {
   prepareLatexForCompilation,
   shiftMarkdownHeadings,

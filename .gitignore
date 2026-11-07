@@ -23,6 +23,8 @@
 /public/vault/*
 /public/vault-images
 /public/vault-images/*
+/public/search-index.json
+temp_vault/
 
 # misc
 .DS_Store

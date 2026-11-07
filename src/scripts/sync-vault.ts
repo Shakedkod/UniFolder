@@ -7,7 +7,7 @@ import { VAULT_DIRECTORY } from '@/lib/vault';
 import { PDFParse } from 'pdf-parse';
 import { exit } from 'process';
 import { parseStyMacros } from '@/lib/katex-macros';
-import { convert } from '@mdtolatex/core';
+import { convert } from '@/lib/mdtolatex';
 
 // CLOUD CONFIGURATION
 const GITHUB_PAT = process.env.GITHUB_PAT;
@@ -405,12 +405,28 @@ const autoFolderMap: { [key: string]: string } = {};
 const globalLinkMap: Record<string, string> = {};
 const globalTitleMap: Record<string, string> = {};
 
+const IGNORED_DIRS = new Set([
+    'node_modules',
+    'cmake-build-debug',
+    'cmake-build-release',
+    'CMakeFiles',
+    'build',
+    'bin',
+    'obj',
+    '.vs',
+    '.idea',
+    '.vscode',
+    '__pycache__',
+    'target',
+    'dist'
+]);
+
 function passOneBuildStructure(srcDir: string, destDir: string, currentUrl = '') {
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
     const entries = fs.readdirSync(srcDir, { withFileTypes: true });
 
     for (const entry of entries) {
-        if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+        if (entry.name.startsWith('.') || IGNORED_DIRS.has(entry.name)) continue;
 
         const srcPath = path.join(srcDir, entry.name);
         const ext = path.extname(entry.name).toLocaleLowerCase();
@@ -534,7 +550,10 @@ function extractAndSavePreambleMacros(vaultSrcDir: string) {
 }
 
 async function main() {
-    const localVault = process.env.LOCAL_VAULT_PATH || 'C:/Users/ShakedKod/Documents/ShakedKod';
+    const defaultVaultPath = process.env.USERPROFILE
+        ? path.join(process.env.USERPROFILE, 'Documents', 'Vault')
+        : path.join(process.cwd(), 'vault');
+    const localVault = process.env.LOCAL_VAULT_PATH || defaultVaultPath;
     let vaultSrcDir = TEMP_DIR;
     let isLocal = false;
 
