@@ -50,7 +50,7 @@
 | **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) |
 | **Search** | [MiniSearch](https://github.com/lucaong/minisearch) |
 | **Markdown / AST** | `unified`, `remark-math`, `remark-gfm`, `rehype-katex`, `rehype-highlight` |
-| **LaTeX Engine** | In-house `@/lib/mdtolatex` converter + local `xelatex` compiler |
+| **LaTeX Engine** | In-house `@/lib/mdtolatex` converter + local `xelatex` or remote microservice |
 | **PDF Processing** | `pdfjs-dist`, `pdf-parse`, Browser PDFium integration |
 
 ---
@@ -62,6 +62,7 @@
 - [Node.js](https://nodejs.org/) (v20+ recommended)
 - [npm](https://www.npmjs.com/) or [pnpm](https://pnpm.io/)
 - *(Optional, for local LaTeX-to-PDF compilation)*: TeX Live / MacTeX with `xelatex` in your system `PATH`.
+- *(Optional, for cloud/Vercel PDF export)*: Deploy the included [`latex-service`](file:///C:/Dev/uni-folder/latex-service) to Railway/Render and set `LATEX_COMPILER_URL`.
 
 ### Installation
 

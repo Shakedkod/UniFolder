@@ -1,0 +1,14 @@
+{
+  "name": "uni-latex-compiler",
+  "version": "1.0.0",
+  "description": "Lightweight XeLaTeX compilation microservice for uni-folder",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}
