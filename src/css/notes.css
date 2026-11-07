@@ -4,6 +4,7 @@
 @import "./notes/callout.css";
 @import "./notes/codeblocks.css";
 @import "./notes/in-graph.css";
+@import "./notes/highlights.css";
 
 .academic-preview h1 {
     @apply text-3xl sm:text-4xl font-bold mt-8 mb-4 pb-2 text-foreground-heading-1 text-center;

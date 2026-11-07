@@ -424,6 +424,64 @@ function resolveTocLinks(toc: any[], linkTextMap: Map<string, string>) {
 
 // loadPreambleMacros is imported from ./katex-macros
 
+const HIGHLIGHT_COLOR_MAP: Record<string, string> = {
+    '🔴': 'red',
+    '🟠': 'orange',
+    '🟡': 'yellow',
+    '🟢': 'green',
+    '🔵': 'blue',
+    '🟣': 'purple',
+};
+
+export function processObsidianHighlights(markdown: string): string {
+    const placeholders: string[] = [];
+    const savePlaceholder = (match: string): string => {
+        const id = `___HIGHLIGHT_SHIELD_${placeholders.length}___`;
+        placeholders.push(match);
+        return id;
+    };
+
+    // 1. Shield code blocks: ```...``` or ~~~...~~~
+    let shielded = markdown.replace(/(```[\s\S]*?```|~~~[\s\S]*?~~~)/g, savePlaceholder);
+
+    // 2. Shield display math: $$...$$
+    shielded = shielded.replace(/(\$\$[\s\S]*?\$\$)/g, savePlaceholder);
+
+    // 3. Shield inline math: $...$
+    shielded = shielded.replace(/(?<!\$)\$(?!\$)((?:\\.|[^$\\\n])+?)\$/g, savePlaceholder);
+
+    // 4. Shield inline code: `...`
+    shielded = shielded.replace(/(`[^`\n]+`)/g, savePlaceholder);
+
+    // 5. Replace ==...==
+    shielded = shielded.replace(/(?<!=)==(?!=)((?:[^\n=]|=(?!=)|(?<!\n)\n(?!\s*\n))+?)(?<!=)==(?!=)/gu, (match, rawInner) => {
+        const inner = rawInner.trim();
+        if (!inner) return match;
+
+        // Check for color emoji prefix: 🔴, 🟠, 🟡, 🟢, 🔵, 🟣
+        const emojiMatch = inner.match(/^([🔴🟠🟡🟢🔵🟣])(?:\s*([\s\S]*))?$/u);
+        if (emojiMatch) {
+            const emoji = emojiMatch[1];
+            const textAfter = (emojiMatch[2] ?? '').trim();
+            const colorName = HIGHLIGHT_COLOR_MAP[emoji];
+            if (colorName) {
+                const displayText = textAfter !== '' ? textAfter : emoji;
+                return `<mark class="obsidian-highlight highlight-${colorName}" data-color="${colorName}">${displayText}</mark>`;
+            }
+        }
+
+        // Standard highlight without emoji
+        return `<mark class="obsidian-highlight">${inner}</mark>`;
+    });
+
+    // 6. Restore shielded content in reverse order
+    for (let i = placeholders.length - 1; i >= 0; i--) {
+        shielded = shielded.replace(`___HIGHLIGHT_SHIELD_${i}___`, () => placeholders[i]);
+    }
+
+    return shielded;
+}
+
 export async function renderMarkdownContent(markdownContent: string) {
     const originalWarn = console.warn;
     console.warn = (...args) => {
@@ -586,6 +644,8 @@ export async function renderMarkdownContent(markdownContent: string) {
             // Fallback for icons you haven't mapped yet
             return match;
         });
+
+    processedContent = processObsidianHighlights(processedContent);
 
     try {
         const processor = unified()

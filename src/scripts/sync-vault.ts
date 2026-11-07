@@ -139,9 +139,15 @@ function getVaultTree(dir: string = VAULT_DIRECTORY, currentPath: string = ''): 
 }
 
 function cleanMarkdown(text: string): string {
-    return text.replace(/!\[\[.*?\]\]/g, '').replace(/\[\[(.*?)\]\]/g, '$1')
-        .replace(/>\s*\[!.*?\][+-]?/g, '').replace(/#\w+/g, '')
-        .replace(/---[\s\S]*?---/g, '').replace(/\n/g, ' ').trim();
+    return text
+        .replace(/(?<!=)==(?!=)(?:[🔴🟠🟡🟢🔵🟣]\s*)?(.*?)(?<!=)==(?!=)/gu, '$1')
+        .replace(/!\[\[.*?\]\]/g, '')
+        .replace(/\[\[(.*?)\]\]/g, '$1')
+        .replace(/>\s*\[!.*?\][+-]?/g, '')
+        .replace(/#\w+/g, '')
+        .replace(/---[\s\S]*?---/g, '')
+        .replace(/\n/g, ' ')
+        .trim();
 }
 
 async function extractPdfText(filePath: string): Promise<{ text: string; toc: any[] }> {

@@ -3,6 +3,7 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
 export default function RenderMD({ content }: { content: string }) {
+    const cleanedContent = content ? content.replace(/(?<!=)==(?!=)(?:[🔴🟠🟡🟢🔵🟣]\s*)?(.*?)(?<!=)==(?!=)/gu, '$1') : '';
     return (
         <ReactMarkdown
             remarkPlugins={[remarkMath]}
@@ -39,7 +40,7 @@ export default function RenderMD({ content }: { content: string }) {
                 ),
             }}
         >
-            {content}
+            {cleanedContent}
         </ReactMarkdown>
     );
 }

@@ -1,0 +1,73 @@
+/* ==========================================================================
+   Obsidian Highlights Styling (Default & Color-coded: 🔴 🟠 🟡 🟢 🔵 🟣)
+   ========================================================================== */
+
+/* Base mark / highlight styles */
+mark,
+.obsidian-highlight {
+    background-color: var(--highlight-default-bg, rgba(250, 204, 21, 0.35));
+    color: inherit;
+    padding: 0.12em 0.35em;
+    margin: 0 0.08em;
+    border-radius: 0.25rem;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    transition: background-color 0.2s ease;
+}
+
+/* 🔴 Red Highlight */
+mark.highlight-red,
+.obsidian-highlight.highlight-red,
+mark[data-color="red"],
+.obsidian-highlight[data-color="red"] {
+    background-color: var(--highlight-red-bg, rgba(239, 68, 68, 0.22));
+}
+
+/* 🟠 Orange Highlight */
+mark.highlight-orange,
+.obsidian-highlight.highlight-orange,
+mark[data-color="orange"],
+.obsidian-highlight[data-color="orange"] {
+    background-color: var(--highlight-orange-bg, rgba(249, 115, 22, 0.24));
+}
+
+/* 🟡 Yellow Highlight */
+mark.highlight-yellow,
+.obsidian-highlight.highlight-yellow,
+mark[data-color="yellow"],
+.obsidian-highlight[data-color="yellow"] {
+    background-color: var(--highlight-yellow-bg, rgba(234, 179, 8, 0.28));
+}
+
+/* 🟢 Green Highlight */
+mark.highlight-green,
+.obsidian-highlight.highlight-green,
+mark[data-color="green"],
+.obsidian-highlight[data-color="green"] {
+    background-color: var(--highlight-green-bg, rgba(34, 197, 94, 0.22));
+}
+
+/* 🔵 Blue Highlight */
+mark.highlight-blue,
+.obsidian-highlight.highlight-blue,
+mark[data-color="blue"],
+.obsidian-highlight[data-color="blue"] {
+    background-color: var(--highlight-blue-bg, rgba(59, 130, 246, 0.22));
+}
+
+/* 🟣 Purple Highlight */
+mark.highlight-purple,
+.obsidian-highlight.highlight-purple,
+mark[data-color="purple"],
+.obsidian-highlight[data-color="purple"] {
+    background-color: var(--highlight-purple-bg, rgba(168, 85, 247, 0.22));
+}
+
+/* Print mode adjustments: ensure high-contrast legible print */
+@media print {
+    mark,
+    .obsidian-highlight {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

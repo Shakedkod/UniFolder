@@ -19,18 +19,81 @@ const geistMono = Geist_Mono({
     subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+    ? (process.env.NEXT_PUBLIC_SITE_URL.startsWith('http') ? process.env.NEXT_PUBLIC_SITE_URL : `https://${process.env.NEXT_PUBLIC_SITE_URL}`)
+    : (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : (process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : 'https://uni-folder.vercel.app'));
+
 export const metadata: Metadata = {
-    title: "תיקיית הסיכומים לתואר במדעי המחשב",
-    description: "מאגר סיכומים ורשימות של תואר במדעי המחשב שאני כעת לומד בטכניון.",
+    metadataBase: new URL(siteUrl),
+    title: {
+        default: "תיקיית הסיכומים לתואר במדעי המחשב",
+        template: "%s | תיקיית הסיכומים",
+    },
+    description: "מאגר סיכומים, תרגולים וחומרי לימוד אינטראקטיביים לתואר ראשון במדעי המחשב בטכניון. כולל נוסחאות LaTeX, גרפים של Desmos, דיאגרמות, סיכומי PDF וקוד.",
+    applicationName: "תיקיית הסיכומים",
+    authors: [{ name: "ShakedKod", url: "https://github.com/ShakedKod" }],
+    creator: "ShakedKod",
+    publisher: "תיקיית הסיכומים",
+    keywords: [
+        "מדעי המחשב",
+        "טכניון",
+        "סיכומים",
+        "אינפי",
+        "אלגברה",
+        "מערכות ספרתיות",
+        "תכנות מערכות",
+        "קבוצות ואוטומטים",
+        "Technion",
+        "Computer Science",
+        "BSc CS",
+        "Uni-Folder"
+    ],
     icons: {
-        icon: "/favicon.ico",
-        apple: "/apple-touch-icon.png",
-    }
+        icon: [
+            { url: "/favicon.ico" },
+            { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+            { url: "/favicon.svg", type: "image/svg+xml" },
+        ],
+        apple: [
+            { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        ],
+    },
+    manifest: "/site.webmanifest",
+    openGraph: {
+        type: "website",
+        locale: "he_IL",
+        url: "/",
+        siteName: "תיקיית הסיכומים לתואר במדעי המחשב",
+        title: "תיקיית הסיכומים לתואר במדעי המחשב | הטכניון",
+        description: "מאגר סיכומים, תרגולים וחומרי לימוד אינטראקטיביים לתואר ראשון במדעי המחשב בטכניון. כולל נוסחאות LaTeX, גרפים של Desmos, דיאגרמות, סיכומי PDF וקוד.",
+        images: [
+            {
+                url: "/og-image.png",
+                width: 1200,
+                height: 630,
+                alt: "תיקיית הסיכומים לתואר במדעי המחשב | הטכניון",
+                type: "image/png",
+            },
+        ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "תיקיית הסיכומים לתואר במדעי המחשב | הטכניון",
+        description: "מאגר סיכומים, תרגולים וחומרי לימוד אינטראקטיביים לתואר ראשון במדעי המחשב בטכניון.",
+        images: ["/og-image.png"],
+    },
+    alternates: {
+        canonical: "/",
+    },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
     return (
-        <html lang="en" className="light" suppressContentEditableWarning>
+        <html lang="he" className="light" suppressContentEditableWarning>
             <head>
                 <script
                     dangerouslySetInnerHTML={{
