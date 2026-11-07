@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@mdtolatex/core'],
+  outputFileTracingExcludes: {
+    '*': [
+      './public/vault/**/*.pdf',
+      './public/vault-images/**/*',
+      './public/cmaps/**/*',
+      './public/standard_fonts/**/*',
+      './temp_vault/**/*',
+    ],
+  },
   headers: async () => {
     return [
       {
