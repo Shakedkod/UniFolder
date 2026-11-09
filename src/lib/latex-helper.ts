@@ -121,7 +121,7 @@ export function shiftMarkdownHeadings(markdown: string): string {
     // Match ATX headings 1 through 5
     const match = /^(#{1,6})\s+/.exec(line);
     if (match) {
-      return `${"#".repeat(match[1].length - 1)}${line.slice(match[0].length)}`;
+      return `${"#".repeat(match[1].length - 1)} ${line.slice(match[0].length)}`;
     }
     return line;
   });
