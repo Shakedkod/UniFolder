@@ -119,9 +119,9 @@ export function shiftMarkdownHeadings(markdown: string): string {
     if (inCodeBlock) return line;
 
     // Match ATX headings 1 through 5
-    const match = line.match(/^(\s*)(#{1,5})(\s+.*)$/);
+    const match = /^(#{1,6})\s+/.exec(line);
     if (match) {
-      return `${match[1]}#${match[2]}${match[3]}`;
+      return `${"#".repeat(match[1].length - 1)}${line.slice(match[0].length)}`;
     }
     return line;
   });

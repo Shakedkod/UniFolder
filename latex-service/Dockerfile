@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-latex-extra \
     texlive-fonts-recommended \
     texlive-lang-other \
+    texlive-lang-arabic \
     texlive-science \
     texlive-pictures \
     ghostscript \
