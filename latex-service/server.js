@@ -107,8 +107,15 @@ app.post('/compile', async (req, res) => {
     const errors = texErrors(log);
 
     if (!pdf) {
+      const failureSummary = errors.length > 0
+        ? errors.join('\n')
+        : (log.split(/\r?\n/).filter(l => l.startsWith('!') || l.includes('Fatal error') || l.includes('Error:')).slice(-5).join('\n') || 'xelatex produced no PDF');
+
+      console.error(`[latex-service] Compilation of "${texName}" produced no PDF. Errors:\n`, failureSummary);
+      console.error('[latex-service] Log tail:\n', log.slice(-2000));
+
       return res.status(422).json({
-        error: 'xelatex produced no PDF',
+        error: failureSummary,
         errors,
         logExcerpt: log.slice(-3000),
       });

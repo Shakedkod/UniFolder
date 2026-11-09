@@ -5,24 +5,15 @@
 export function prepareLatexForCompilation(latex: string): string {
   let docLatex = latex;
 
-  // 1. Optimize Hebrew and monospace font fallbacks
-  docLatex = docLatex
-    .replace(
-      /\\IfFontExistsTF\{Nachlieli CLM\}\{.*?\}\{\\newfontfamily\\titlefont\{Arial\}\}/g,
-      '\\IfFontExistsTF{Arial}{\\newfontfamily\\titlefont{Arial}}{\\newfontfamily\\titlefont{Nachlieli CLM}}'
-    )
-    .replace(
-      /\\IfFontExistsTF\{David CLM\}\{.*?\}\{\\newfontfamily\\hebrewfont\{Arial\}\}/g,
-      '\\IfFontExistsTF{David}{\\newfontfamily\\hebrewfont{David}}{\\newfontfamily\\hebrewfont{David CLM}}'
-    )
-    .replace(
-      /\\IfFontExistsTF\{David CLM\}\{.*?\}\{\\newfontfamily\{\\hebrewfonttt\}\[Script=Hebrew\]\{Arial\}\}/g,
-      '\\IfFontExistsTF{Courier New}{\\setmonofont{Courier New}}{\\setmonofont{Consolas}}\n\\IfFontExistsTF{Courier New}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Courier New}}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Arial}}\n\\IfFontExistsTF{Courier New}{\\newfontfamily\\englishfonttt{Courier New}}{\\newfontfamily\\englishfonttt{Consolas}}'
-    )
-    .replace(
-      /\\IfFontExistsTF\{Latin Modern Roman\}\{.*?\}\{\\newfontfamily\\englishfont\{Times New Roman\}\}/g,
-      '\\IfFontExistsTF{Times New Roman}{\\newfontfamily\\englishfont{Times New Roman}}{\\newfontfamily\\englishfont{Latin Modern Roman}}'
-    );
+  // 1. Optimize Hebrew and monospace font fallbacks across Linux and Windows
+  const safeFontSetup = `\\IfFontExistsTF{David CLM}{\\newfontfamily\\hebrewfont{David CLM}}{\\IfFontExistsTF{David}{\\newfontfamily\\hebrewfont{David}}{\\IfFontExistsTF{Arial}{\\newfontfamily\\hebrewfont{Arial}}{\\IfFontExistsTF{Liberation Serif}{\\newfontfamily\\hebrewfont{Liberation Serif}}{\\newfontfamily\\hebrewfont{FreeSerif}}}}}
+\\IfFontExistsTF{Nachlieli CLM}{\\newfontfamily\\titlefont{Nachlieli CLM}}{\\IfFontExistsTF{Arial}{\\newfontfamily\\titlefont{Arial}}{\\IfFontExistsTF{Liberation Sans}{\\newfontfamily\\titlefont{Liberation Sans}}{\\newfontfamily\\titlefont{FreeSans}}}}
+\\IfFontExistsTF{Courier New}{\\setmonofont{Courier New}}{\\IfFontExistsTF{Consolas}{\\setmonofont{Consolas}}{\\IfFontExistsTF{Liberation Mono}{\\setmonofont{Liberation Mono}}{\\setmonofont{FreeMono}}}}
+\\IfFontExistsTF{Courier New}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Courier New}}{\\IfFontExistsTF{Consolas}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Consolas}}{\\IfFontExistsTF{Liberation Mono}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Liberation Mono}}{\\IfFontExistsTF{FreeMono}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{FreeMono}}{}}}}
+\\IfFontExistsTF{Courier New}{\\newfontfamily\\englishfonttt{Courier New}}{\\IfFontExistsTF{Consolas}{\\newfontfamily\\englishfonttt{Consolas}}{\\IfFontExistsTF{Liberation Mono}{\\newfontfamily\\englishfonttt{Liberation Mono}}{}}}
+\\IfFontExistsTF{Times New Roman}{\\newfontfamily\\englishfont{Times New Roman}}{\\IfFontExistsTF{Latin Modern Roman}{\\newfontfamily\\englishfont{Latin Modern Roman}}{\\IfFontExistsTF{Liberation Serif}{\\newfontfamily\\englishfont{Liberation Serif}}{\\newfontfamily\\englishfont{FreeSerif}}}}`;
+
+  docLatex = docLatex.replace(/\\IfFontExistsTF\{[\s\S]*?\n\\IfFontExistsTF\{Times New Roman\}[\s\S]*?\n/, `${safeFontSetup}\n`);
 
   // 2. Remove any invalid \provideenvironment commands that print text on page 1
   docLatex = docLatex.replace(/\\provideenvironment\{english\}\{\}\{\}/g, '');

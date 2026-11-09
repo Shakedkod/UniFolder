@@ -121,7 +121,14 @@ async function compileViaRemoteService(
     try {
       const errData = await response.json();
       if (errData.error) errMessage = errData.error;
-      if (Array.isArray(errData.errors)) errors = errData.errors;
+      if (Array.isArray(errData.errors) && errData.errors.length > 0) {
+        errors = errData.errors;
+        if (errMessage === 'xelatex produced no PDF' || !errMessage) {
+          errMessage = errors.join('\n');
+        }
+      } else if (errData.logExcerpt && (errMessage === 'xelatex produced no PDF' || !errMessage)) {
+        errMessage = errData.logExcerpt.split(/\r?\n/).filter((l: string) => l.startsWith('!') || l.includes('Error')).slice(-3).join('\n') || errMessage;
+      }
     } catch {
       const text = await response.text().catch(() => '');
       if (text) errMessage = text;

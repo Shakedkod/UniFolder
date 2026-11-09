@@ -3,8 +3,13 @@ FROM node:20-bookworm-slim
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install XeTeX, required LaTeX packages, and Hebrew / Unicode fonts
+# Install XeTeX, fontconfig, required LaTeX packages, and Hebrew / Unicode fonts
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    fontconfig \
+    fonts-liberation \
+    fonts-dejavu-core \
+    fonts-freefont-otf \
+    culmus \
     texlive-xetex \
     texlive-latex-recommended \
     texlive-latex-extra \
@@ -12,12 +17,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-lang-other \
     texlive-science \
     texlive-pictures \
-    culmus \
-    fonts-freefont-otf \
-    fonts-dejavu-core \
     ghostscript \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Configure fontconfig aliases so Windows fonts (Arial, David, Times, Courier) map cleanly to Linux/Culmus fonts
+COPY fonts.conf /etc/fonts/local.conf
+
+# Rebuild fontconfig cache
+RUN fc-cache -f -v
 
 WORKDIR /app
 

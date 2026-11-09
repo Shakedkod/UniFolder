@@ -15,12 +15,12 @@ export const BASE_LATEX_TEXT = `% ---------- Fonts & language ----------
 export const LATEX_HEBREW_TEXT = `\\usepackage{polyglossia}
 \\setdefaultlanguage{hebrew}
 \\setotherlanguage{english}
-\\IfFontExistsTF{Arial}{\\newfontfamily\\titlefont{Arial}}{\\IfFontExistsTF{Nachlieli CLM}{\\newfontfamily\\titlefont{Nachlieli CLM}}{\\newfontfamily\\titlefont{Arial}}}
-\\IfFontExistsTF{David}{\\newfontfamily\\hebrewfont{David}}{\\IfFontExistsTF{David CLM}{\\newfontfamily\\hebrewfont{David CLM}}{\\newfontfamily\\hebrewfont{Arial}}}
-\\IfFontExistsTF{Courier New}{\\setmonofont{Courier New}}{\\IfFontExistsTF{Consolas}{\\setmonofont{Consolas}}{\\setmonofont{Courier New}}}
-\\IfFontExistsTF{Courier New}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Courier New}}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Arial}}
-\\IfFontExistsTF{Courier New}{\\newfontfamily\\englishfonttt{Courier New}}{\\IfFontExistsTF{Consolas}{\\newfontfamily\\englishfonttt{Consolas}}{}}
-\\IfFontExistsTF{Times New Roman}{\\newfontfamily\\englishfont{Times New Roman}}{\\IfFontExistsTF{Latin Modern Roman}{\\newfontfamily\\englishfont{Latin Modern Roman}}{\\newfontfamily\\englishfont{Times New Roman}}}
+\\IfFontExistsTF{David CLM}{\\newfontfamily\\hebrewfont{David CLM}}{\\IfFontExistsTF{David}{\\newfontfamily\\hebrewfont{David}}{\\IfFontExistsTF{Arial}{\\newfontfamily\\hebrewfont{Arial}}{\\IfFontExistsTF{Liberation Serif}{\\newfontfamily\\hebrewfont{Liberation Serif}}{\\newfontfamily\\hebrewfont{FreeSerif}}}}}
+\\IfFontExistsTF{Nachlieli CLM}{\\newfontfamily\\titlefont{Nachlieli CLM}}{\\IfFontExistsTF{Arial}{\\newfontfamily\\titlefont{Arial}}{\\IfFontExistsTF{Liberation Sans}{\\newfontfamily\\titlefont{Liberation Sans}}{\\newfontfamily\\titlefont{FreeSans}}}}
+\\IfFontExistsTF{Courier New}{\\setmonofont{Courier New}}{\\IfFontExistsTF{Consolas}{\\setmonofont{Consolas}}{\\IfFontExistsTF{Liberation Mono}{\\setmonofont{Liberation Mono}}{\\setmonofont{FreeMono}}}}
+\\IfFontExistsTF{Courier New}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Courier New}}{\\IfFontExistsTF{Consolas}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Consolas}}{\\IfFontExistsTF{Liberation Mono}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{Liberation Mono}}{\\IfFontExistsTF{FreeMono}{\\newfontfamily{\\hebrewfonttt}[Script=Hebrew]{FreeMono}}{}}}}
+\\IfFontExistsTF{Courier New}{\\newfontfamily\\englishfonttt{Courier New}}{\\IfFontExistsTF{Consolas}{\\newfontfamily\\englishfonttt{Consolas}}{\\IfFontExistsTF{Liberation Mono}{\\newfontfamily\\englishfonttt{Liberation Mono}}{}}}
+\\IfFontExistsTF{Times New Roman}{\\newfontfamily\\englishfont{Times New Roman}}{\\IfFontExistsTF{Latin Modern Roman}{\\newfontfamily\\englishfont{Latin Modern Roman}}{\\IfFontExistsTF{Liberation Serif}{\\newfontfamily\\englishfont{Liberation Serif}}{\\newfontfamily\\englishfont{FreeSerif}}}}
 
 \\renewcommand\\labelitemi{$\\bullet$}
 \\renewcommand\\labelitemii{$\\circ$}
